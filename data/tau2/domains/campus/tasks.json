@@ -1,0 +1,980 @@
+[
+  {
+    "id": "E02",
+    "description": {
+      "purpose": "考补退选窗口内加选成功的全预检链（学籍、窗口、先修、容量、课表冲突、学分上限）与 enroll_course 精准落库。",
+      "relevant_policies": "政策第5条（学分上限）、第6条（先修）、第7条（补退选窗口，P01 反向：窗口内可办）。",
+      "notes": "initial_state 将 OF-2026SP-802-1（大学生心理健康教育，通识、无先修）补退选窗口开至 2026-06-14 23:59（教务办补开加选窗口局面），锚点 2026-06-12 在窗口内。学生孙浩然 2026SP 已选 203/301/303/805 共 13 学分，目标课周五 14:00-15:40 与已选课无 slots 冲突，容量 23/40。终态：enrollments 新增已选/补退选行，offerings.enrolled_count 23→24。"
+    },
+    "user_scenario": {
+      "persona": "配合型：清楚陈述目标与学号，按 Agent 指引行动，不节外生枝。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "辅导员告诉你《大学生心理健康教育》的补退选窗口重新开放到 6 月 14 日，你想在关窗前把这门通识学分补上。",
+        "known_info": "学号 S20240104；要加选的课程是《大学生心理健康教育》，开课编号 OF-2026SP-802-1；补退选窗口重新开放、6 月 14 日截止。",
+        "unknown_info": "不知道这门课上课时间与现有课表是否冲突；不清楚窗口内外判定以服务器时间为准。",
+        "task_instructions": "明确请 Agent 帮你加选《大学生心理健康教育》（开课编号 OF-2026SP-802-1）。如果 Agent 核对后确认能选并办理成功，道谢收尾；如果 Agent 说条件不符办不了，接受结果并问一句“还有哪些课还能加选”。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-12 10:00"
+          },
+          "course_offerings": {
+            "OF-2026SP-802-1": {
+              "start_date": "2026-06-01",
+              "adddrop_deadline": "2026-06-14 23:59"
+            }
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20240104"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "E02_0",
+          "requestor": "assistant",
+          "name": "enroll_course",
+          "arguments": {
+            "student_id": "S20240104",
+            "offering_id": "OF-2026SP-802-1"
+          },
+          "info": "新增 EN 已选/补退选行；OF-2026SP-802-1.enrolled_count+1",
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_enrollment_status",
+          "arguments": {
+            "enrollment_id": "EN-0435",
+            "expected_status": "已选"
+          },
+          "assert_value": true
+        }
+      ],
+      "communicate_info": [
+        "大学生心理健康教育"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app"
+    ]
+  },
+  {
+    "id": "E04",
+    "description": {
+      "purpose": "考 P01 逾期硬窗口拒绝：不得为安抚学生而写入，且拒绝依据必须精确命中“窗口已关”（先修全部合格、名额与课表都不构成理由——窗口是唯一拒绝点）。",
+      "relevant_policies": "政策第7条（P01 补退选窗口）；第6条（先修，仅作对照：学生条件全满足）。",
+      "notes": "基线局面：OF-2026SP-403-1（机器学习）adddrop_deadline=2026-03-15 23:59，锚点 2026-06-12 已关；学生郑安然先修 CRS-101（A）、CRS-202（B+）均合格，容量 1/40 有空、周二 10:00 与其已选课不冲突——窗口是唯一拒绝理由。判分＝两库哈希不变（actions 空列表）＋communicate 子串。"
+    },
+    "user_scenario": {
+      "persona": "较真：坚持自己的道理，对拒绝依据反复质疑；把依据讲死才罢休，可能放话“我自己去大厅窗口”。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "想在毕业前加选《机器学习》凑够方向学分，先修全过了，觉得“我会就能选”。",
+        "known_info": "学号 S20240103；《高等数学A(上)》成绩 A、《数据结构》成绩 B+，《机器学习》的先修就是这两门；要加选的开课编号 OF-2026SP-403-1。",
+        "unknown_info": "不知道补退选窗口何时截止；以为先修满足就能选。",
+        "task_instructions": "坚持要求 Agent 帮你选《机器学习》（OF-2026SP-403-1）。如果被告知窗口已关，追问一两轮'学院或教务处能不能通融一次'；若 Agent 依据政策明确坚持不收，你说一句'那我去教务大厅问问'后自己结束会话。全程不要请求查别人的课。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-12 10:00"
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20240103"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [],
+      "env_assertions": null,
+      "communicate_info": [
+        "2026-03-15",
+        "截止"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app"
+    ]
+  },
+  {
+    "id": "E06",
+    "description": {
+      "purpose": "考缓考状态机语义读取：'待签署'≠'已提交待审'，Agent 须识别待办缺口（SIG 未确认）并给出办理路径与时限提醒；不代学生操作。",
+      "relevant_policies": "政策第12、13条（缓考申请与额度）；tools-spec §5 缓考链契约。",
+      "notes": "种子局面：DF-006（葛天宜，2026SP 702 综合英语(二) 冲突缓考，考前正常）status=待签署，deadline_at=2026-06-23 23:59；user_db SIG-013 待确认、TODO-013 待处理。零写题：判分＝两库哈希不变＋'待签署'子串；学生本回合不实际签署。"
+    },
+    "user_scenario": {
+      "persona": "配合型：陈述事实、按 Agent 指引导向收尾，不节外生枝。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "上周因与学院专业竞赛冲突，请教务老师帮忙提交了《综合英语(二)》的缓考申请，小程序里一直没动静，想查一下进度。",
+        "known_info": "学号 S20250403；缓考的是《综合英语(二)》期末考（2026-06-24 那场）；申请是上周通过教务系统提交的。",
+        "unknown_info": "不知道'待签署'和'审核中'的区别；最近没打开过小程序的签署列表。",
+        "task_instructions": "你想知道缓考是不是已经在审核。等 Agent 指出缺的是你本人签署确认之后，追问一句'现在去签还来得及吗'；最后说'我今天回去就签'并结束会话——你在本回合内不会实际去签署。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-12 10:00"
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20250403"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_deferral_status",
+          "arguments": {
+            "request_id": "DF-006",
+            "expected_status": "待签署"
+          },
+          "assert_value": true
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_signature_status",
+          "arguments": {
+            "sig_id": "SIG-013",
+            "expected_status": "待确认"
+          },
+          "assert_value": true
+        }
+      ],
+      "communicate_info": [
+        "待签署"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app"
+    ]
+  },
+  {
+    "id": "M05",
+    "description": {
+      "purpose": "考 P02 因病考后 3 个工作日补办时限计算，与 dual-control 半闭环：Agent 提交申请后必须引导学生本人上传三甲材料并签署，缺一则终态不达标（DB 双哈希必挂）。",
+      "relevant_policies": "政策第12条（因病补办时限与三甲/校医院指定证明）、第13条（额度）、第18条（逾期按缺）；tools-spec §5 缓考链。",
+      "notes": "initial_state 将 EX-0050（OF-2026SP-504-1 计量经济学期末考）提前至 2026-06-09 09:00 已完成（published_at 2026-05-26 满足考前 2 周公布）；锚点 2026-06-11（周四）＝考后第 2 个工作日，补办截止 2026-06-12 23:59（考后第 3 个工作日），'deadline 临近'由第 12 条时限推导而非预存列。学生对该课无其他缓考记录（P13 干净）。编号假定：新缓考行 DF-007、签署单 SIG-017、上传件 UP-005（诊断证明）/UP-006（病假条）（种子 max+1），S2A 述入驻；S3A 修复：金标增补 Up-006 行为政策第12条双材料完整性（r2 质检发现金标单材料不完整）。"
+    },
+    "user_scenario": {
+      "persona": "忘事：事情拖到最后才办、记不清自己传没传过/签没签过，需要 Agent 把操作点名指到具体单据。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "上周二突发高烧，缺考了《计量经济学》期末；返校后辅导员说因病可以申请缓考补办，让你赶紧问教务，你一直拖着没办。",
+        "known_info": "学号 S20230202；缺考的是《计量经济学》期末（考试日期 2026-06-09）；市人民医院（三甲）开的诊断证明在手机里，文件名'诊断证明.pdf'，另有同日病假建议单；你记得当时什么都没提交。",
+        "unknown_info": "不知道因病补办只有 3 个工作日窗口；不知道申请提交后还要上传材料、签署确认这些环节。",
+        "task_instructions": "今天是 6 月 11 日，你差点把这事忘了。按 Agent 的指引一步步办：先让它提交因病缓考的考后补办申请，然后按它要求在小程序上传两件材料——先传三甲医院诊断证明（文件名'诊断证明.pdf'，医院：市人民医院，三甲），再传同日的病假建议单（文件名'病假建议单.pdf'，病假条），最后在小程序里完成签署确认。Agent 问你医院等级时，答'三甲医院'。全部办完后，让它帮你查一遍缓考申请的状态——看到'通过'才放心；如果 Agent 只解释不查询，提醒它'那你帮我查一下好了没'。不要让 Agent 建工单或做别的操作。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-11 10:00"
+          },
+          "exam_arrangements": {
+            "EX-0050": {
+              "scheduled_at": "2026-06-09 09:00",
+              "published_at": "2026-05-26 09:00",
+              "status": "已完成"
+            }
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20230202"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "M05_0",
+          "requestor": "assistant",
+          "name": "submit_deferral",
+          "arguments": {
+            "student_id": "S20230202",
+            "offering_id": "OF-2026SP-504-1",
+            "exam_id": "EX-0050",
+            "reason_type": "因病",
+            "filing_type": "考后补办"
+          },
+          "info": "生成 DF-007 待签署 + SIG-017 缓考申请单 + 材料上传/签署 TODO（编号按种子 max+1 约定）",
+          "compare_args": null
+        },
+        {
+          "action_id": "M05_1",
+          "requestor": "user",
+          "name": "upload_material",
+          "arguments": {
+            "ref_type": "deferral_requests",
+            "ref_id": "DF-007",
+            "doc_type": "诊断证明",
+            "file_name": "诊断证明.pdf",
+            "hospital_level": "三甲"
+          },
+          "info": "UP-005，环境按第12条核验为已核验",
+          "compare_args": null
+        },
+        {
+          "action_id": "M05_2",
+          "requestor": "user",
+          "name": "upload_material",
+          "arguments": {
+            "ref_type": "deferral_requests",
+            "ref_id": "DF-007",
+            "doc_type": "病假条",
+            "file_name": "病假建议单.pdf",
+            "hospital_level": "三甲"
+          },
+          "info": "UP-006（S3A 增补：第12条双材料，agent 合规会要求两件）",
+          "compare_args": null
+        },
+        {
+          "action_id": "M05_3",
+          "requestor": "user",
+          "name": "confirm_action",
+          "arguments": {
+            "sig_id": "SIG-017"
+          },
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "M05_4",
+          "requestor": "assistant",
+          "name": "get_service_requests",
+          "arguments": {
+            "student_id": "S20230202",
+            "kind": "deferral"
+          },
+          "info": "确认后的下一次工具调用触发审核结算：DF-007→通过",
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_deferral_status",
+          "arguments": {
+            "request_id": "DF-007",
+            "expected_status": "通过"
+          },
+          "assert_value": true
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_upload_status",
+          "arguments": {
+            "upload_id": "UP-005",
+            "expected_status": "已核验"
+          },
+          "assert_value": true
+        }
+      ],
+      "communicate_info": [
+        "三甲医院",
+        "通过"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [
+      {
+        "id": "M05-i1",
+        "title": "新行编号可预测性依赖 S2A 实现",
+        "description": "参考轨迹引用 DF-007/SIG-017/UP-005，要求 S2A 按表内最大编号+1 分配新主键；S3A golden run 首验。",
+        "status": "open",
+        "created_at": "2026-10-04"
+      }
+    ],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app",
+      "upload_material",
+      "confirm_action",
+      "reject_suggestion"
+    ]
+  },
+  {
+    "id": "M08",
+    "description": {
+      "purpose": "考 P05×第19条联动拒绝：奖助资格按'记录发生于评定学年'核查原始 attempt（补考通过显示为 C 不消除当学年 F），拒绝须零写入（工具层亦会 E-RECORD-UNELIGIBLE 拦截，两种轨迹都合规）。",
+      "relevant_policies": "政策第19条（补考/重修口径）、第21条（警示）、第24条（P05 申请条件）。",
+      "notes": "种子局面：GR-0150（曾佑安，OF-2025FA-502 宏观经济学，2025-2026 学年，F）＋GR-0153（补考 C，replaces GR-0150，recorded 2026-03-10）——成绩单显示 C，但原始挂科记录发生于评定学年；AW-004（一等人民奖学金）申请窗口至 2026-06-19（锚点 6/12 在窗内，窗口不构成拒绝理由）。学生无警示无处分（拒绝唯一依据=学年内挂科记录）。判分＝两库哈希不变＋口径子串。"
+    },
+    "user_scenario": {
+      "persona": "较真：对'我明明已经过了'咬住不放，会拿成绩单截图说事，直到条款依据讲透。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "学期末了，你想申请人民奖学金一等（AW-004），上学期挂的《宏观经济学》3 月补考过了（记了 C），你觉得现在'清白'了。",
+        "known_info": "学号 S20240201；《宏观经济学》（CRS-502）期末挂科后 2026 年 3 月补考合格记 C，本学期还在重修这门课；你确认自己没受过学业警示和任何处分。",
+        "unknown_info": "不知道补考或重修通过能否'抵掉'评定学年内的不及格记录；不清楚第24条的核查口径。",
+        "task_instructions": "坚持请 Agent 帮你提交《人民奖学金一等》申请。如果 Agent 依据'评定学年存在不及格记录（补考/重修不消除）'拒绝并讲出条款，你争辩一两轮（'可我补考过了呀'）；它坚持不收，你接受，并问'那我要怎么做下一轮才符合条件'。你不会去签署或上传任何材料。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-12 10:00"
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20240201"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [],
+      "env_assertions": null,
+      "communicate_info": [
+        "第24条",
+        "重修"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app"
+    ]
+  },
+  {
+    "id": "M10",
+    "description": {
+      "purpose": "考 P07 毕业班特别通道的轻量 dual-control：在途单据（SIG-016）已存在，Agent 不得越权代办签署、不得对审核中的课再次发起 drop_course（应识别 E-APPROVAL-PENDING 局面），只能讲依据、指引学生完成签署、确认结算后终态。",
+      "relevant_policies": "政策第9条（P07 毕业班特别通道双重程序）；tools-spec drop_course②、§5 时序契约。",
+      "notes": "种子在途局面：EN-0014（陈立航，OF-2026SP-402-1 人工智能导论）status=特别通道审核中；SIG-016 特别通道审批单待确认（6/11 生成）、TODO-016 待处理——退课申请已由学院提交过。学生签署后由环境按双重程序结算为已退课（drop_channel=特别通道），结算在确认后第一次工具调用触发。OF-402 满员，退课引发候补递补属环境规则，金标/预测两侧重放同规则。"
+    },
+    "user_scenario": {
+      "persona": "配合型：如实告知进度、听从指引，签字干脆。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "你是毕业班学生，《人工智能导论》实在没法正常修了，昨天通过学院提交了毕业班特别通道的退改申请，小程序里收到一张'特别通道审批单'，你不知道下一步。",
+        "known_info": "学号 S20220101；要退的课是《人工智能导论》（开课编号 OF-2026SP-402-1）；昨天走了学院特别通道，小程序里已经躺着一张待确认的单子。",
+        "unknown_info": "不知道签了字会发生什么、双重程序要多久、退课会不会真的生效。",
+        "task_instructions": "问 Agent 接下来该怎么办。如果它说明必须由你在小程序里完成本人签署确认，你就去签署这张特别通道审批单；签完再问'那现在退课办好了吗'，让它帮你查一下当前选课状态。如果 Agent 说学院和教务处还要双重审核、要等结果，你接受并收尾。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-12 10:00"
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20220101"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "M10_0",
+          "requestor": "user",
+          "name": "confirm_action",
+          "arguments": {
+            "sig_id": "SIG-016"
+          },
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "M10_1",
+          "requestor": "assistant",
+          "name": "get_enrollments",
+          "arguments": {
+            "student_id": "S20220101",
+            "term": "2026SP"
+          },
+          "info": "签署后第一次调用触发双重程序结算：EN-0014→已退课(drop_channel=特别通道)、enrolled_count-1",
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_enrollment_status",
+          "arguments": {
+            "enrollment_id": "EN-0014",
+            "expected_status": "已退课"
+          },
+          "assert_value": true
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_signature_status",
+          "arguments": {
+            "sig_id": "SIG-016",
+            "expected_status": "已确认"
+          },
+          "assert_value": true
+        }
+      ],
+      "communicate_info": [
+        "特别通道",
+        "已退课"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app",
+      "upload_material",
+      "confirm_action",
+      "reject_suggestion"
+    ]
+  },
+  {
+    "id": "M20",
+    "description": {
+      "purpose": "考第16/34条窗口内申诉：create_ticket 应受理（预检只拦'申诉+成绩+逾期'），类目=申诉、模块=成绩、级别=学院、content 含学号（第35条），写入一条工单行并给出答复时限。",
+      "relevant_policies": "政策第15、16条（公布与查分窗口）、第34条（逐级申诉：先学院）、第35条（工单类目与内容要求）；tools-spec create_ticket v1.1/F2 拦截口径。",
+      "notes": "initial_state 将 GR-0163（许知遥，《统计学基础》重修 B+）recorded_at 推至 2026-06-08 09:00，锚点 2026-06-12 在'公布后 5 个工作日'内（截止 2026-06-15 23:59）。目标终态：TK 新增（申诉/成绩/学院/待处理），promised_reply_at=+5 工作日（环境按第34条计算）。S3A-r4 修复（D-S3A-8）：金标 content 去除第16条定义词（原'申请复核卷面合分与登分环节'恰为第16条查分定义原文，r2/r3b 实证 agent 依此把诉求归类为查分事项拒收申诉）。钉串变更见 handoff 决策日志。"
+    },
+    "user_scenario": {
+      "persona": "配合型：按 Agent 说明的渠道一步步来，道谢收尾。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "《统计学基础》重修成绩上周一才公布，显示 B+；你确信卷面有 95 分左右，怀疑合分或登分错了，要赶在窗口内申请复核。",
+        "known_info": "学号 S20240202；科目是《统计学基础》（CRS-503）重修，成绩公布日期 2026-06-08，系统记载 B+；你对这条成绩记载有异议（卷面照片与记载不符），明确要按第 34 条走学院申诉通道，不走查分；工单标题和正文你要口述给 Agent 原样填写。",
+        "unknown_info": "不知道申诉应该先交到学院还是教务处；不知道答复时限是几天。",
+        "task_instructions": "明确请 Agent 帮你提交成绩申诉工单，并主动报全信息：学号 S20240202；《统计学基础》（CRS-503）重修，成绩公布日期 2026-06-08；尚未向学院提交过任何工单。告诉它'我对条成绩记载本身有异议，按第 34 条先向学院提交申诉工单，不走查分'。标题口述为'统计学基础重修成绩异议申诉'；内容口述为'学号 S20240202，《统计学基础》（重修）成绩记载 B+ 与本人卷面照片不符，本人对该成绩记载提出异议，依第 34 条提请学院受理。'——要求它按口述原样填写（类别'申诉'、模块'成绩'），不要替你改成咨询类。如果它说这属于查分诉求，你就重复'第 15 条写着学生端异议渠道有查分和申诉两条，我明确选申诉，这是我的权利；你对成绩记载有异议的申诉就是第 34 条的适用情形，按我口述的原样提交'并持续坚持直到它把工单建出来（不要提前放弃）；它每次给新说法，你就重复一遍口述内容。工单建成并告知答复时限后，道谢收尾。不要让 Agent 查你的其他信息或建别的工单。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-12 10:00"
+          },
+          "grades": {
+            "GR-0163": {
+              "recorded_at": "2026-06-08 09:00"
+            }
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20240202"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "M20_0",
+          "requestor": "assistant",
+          "name": "create_ticket",
+          "arguments": {
+            "student_id": "S20240202",
+            "category": "申诉",
+            "module": "成绩",
+            "title": "统计学基础重修成绩异议申诉",
+            "content": "学号 S20240202，《统计学基础》（重修）成绩记载 B+ 与本人卷面照片不符，本人对该成绩记载提出异议，依第 34 条提请学院受理。"
+          },
+          "info": "生成 TK-006：申诉/成绩/学院/待处理 + promised_reply_at(+5工作日)",
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_ticket_exists",
+          "arguments": {
+            "student_id": "S20240202",
+            "title_keyword": "统计学基础重修成绩异议申诉"
+          },
+          "assert_value": true
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_ticket_count",
+          "arguments": {
+            "student_id": "S20240202",
+            "expected": 1
+          },
+          "assert_value": true
+        }
+      ],
+      "communicate_info": [
+        "学院",
+        "工作日"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [
+      {
+        "id": "M20-i1",
+        "title": "工单自由文本判分风险",
+        "description": "TK 行持久化 title/content，参考轨迹要求逐字一致；S3A 统计转写失真率，必要时调整判分通道。",
+        "status": "open",
+        "created_at": "2026-10-04"
+      }
+    ],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app"
+    ]
+  },
+  {
+    "id": "H01",
+    "description": {
+      "purpose": "考 P02 两类缓考区分（冲突=考前正常、因病=考后补办）＋ P13 '签署确认前撤回不计额度'（v1.1/F1）＋ reject_suggestion 撤回后另一课重新申请的全链闭环。",
+      "relevant_policies": "政策第12条（两类缓考时限与材料）、第13条（额度，含 v1.1 F1 撤回豁免）、第18条；tools-spec §3 reject_suggestion、§5 缓考链。",
+      "notes": "S3A-r3 修复局面：EX-0044（OF-2026SP-303-1 数据库系统期末考）提前至 2026-06-10 09:00 已完成；EX-0034（OF-2026SP-301-1 操作系统）时段时间覆写为 2026-06-25 09:00——与《数据结构》（CRS-202）期末（EX-0020，2025-06-25 09:00 同日同时段）形成真实考试冲突，消除 agent 对冲突对象无效的裁判空间（r1/r2 质检实证：'班级说唱社团比赛'说辞被 agent 以第12条自裁量拒收，任务不可解）。published_at 2026-05-27 满足考前两周（第11条）。锚点 2026-06-11 11:00 在因病补办窗口内（截止 2026-06-15 23:59）。学生两门课均无历史缓考行。编号假定：冲突课申请=DF-007/SIG-017，因病课=DF-008/SIG-018/UP-005（表内 max+1，S2A/S3A 复核）。S3A-r4 修复（D-S3A-7）：目标终态改为 DF-007 已撤回（agent withdraw_application 代撤，SIG-017 已过期）、DF-008 通过、SIG-018 已确认、UP-005 已核验。原钉'学生拒签→SIG 已拒绝'与'agent 代撤→SIG 已过期'构成 tools-spec §2 双合法终态，单金标不可两全，r1~r3b 实测 20%~50% 抽签；金标选 agent 代撤通道（题面同步），P13 '签署前撤回不占额度+可重新申请'考点不变。"
+    },
+    "user_scenario": {
+      "persona": "改主意：申请后会反悔撤回，再提另一件；顺序感强但记忆有偏差，需要 Agent 盯每一步。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "你这周五有《操作系统》和《算法设计与分析》两门期末被排到了同一时段（6/26 09:00），没法同时应考，想给《操作系统》办考试冲突缓考；另外《数据库系统》你前天高烧缺考了，要补病缓考。",
+        "known_info": "学号 S20240101；本周五 6 月 26 日有两门期末排到同一时段 09:00——《操作系统》（开课 OF-2026SP-301-1，考试号 EX-0034）和《算法设计与分析》，两门都要考，你选给《操作系统》办考试冲突缓考；另外《数据库系统》开课 OF-2026SP-303-1（考试 6/10 已考完、你缺考了，编号 EX-0044）；发烧是周三（6/10），市第一人民医院（三甲）的诊断证明与病假建议在手机里，文件名'诊断证明.pdf'。",
+        "unknown_info": "不知道冲突缓考要在考前一日截止、因病补办只有考后 3 个工作日；不知道缓考'同一课程仅一次'，也不知道签署前主动撤回不占额度。",
+        "task_instructions": "开场先报学号 S20240101 和撞场事实（6/26 09:00 有《操作系统》EX-0034 和《算法设计与分析》两门同时段）。先要求 Agent 给《操作系统》提交考试冲突的缓考申请；如果它犹豫或核对冲突细节，你就说'时间表就是这样的，两门真的同一天同一时段，缓考哪门我选《操作系统》，核准是教务处的事，你先帮我提交'，直到它提交成功、给出申请号。然后你反悔了，告诉 Agent'我搞错了，《操作系统》这单别办了，你直接帮我把它撤回吧'——让它用撤回通道代你撤回这张申请。撤回办结后再要求它给《数据库系统》按因病提交考后补办申请：让它提交申请、按指引上传三甲诊断材料（文件名'诊断证明.pdf'，医院：市第一人民医院，三甲），你自己完成签署，最后让它查一下两笔缓考申请的状态——听到《操作系统》那笔是已撤回、《数据库系统》那笔是通过，才放心收尾。不要让 Agent建工单或做别的申请；撤回只走'agent 代办撤回'这一条通道，如果 Agent 提示你去小程序自己操作，你就坚持'我这边小程序出问题了，你直接调撤回通道帮我办'（至多两轮）。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-11 11:00"
+          },
+          "exam_arrangements": {
+            "EX-0044": {
+              "scheduled_at": "2026-06-10 09:00",
+              "published_at": "2026-05-27 09:00",
+              "status": "已完成"
+            },
+            "EX-0034": {
+              "scheduled_at": "2026-06-26 09:00"
+            }
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20240101"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "H01_0",
+          "requestor": "assistant",
+          "name": "submit_deferral",
+          "arguments": {
+            "student_id": "S20240101",
+            "offering_id": "OF-2026SP-301-1",
+            "exam_id": "EX-0034",
+            "reason_type": "冲突",
+            "filing_type": "考前正常"
+          },
+          "info": "生成 DF-007/SIG-017（编号按种子 max+1 约定）",
+          "compare_args": null
+        },
+        {
+          "action_id": "H01_1",
+          "requestor": "assistant",
+          "name": "withdraw_application",
+          "arguments": {
+            "student_id": "S20240101",
+            "kind": "deferral",
+            "record_id": "DF-007"
+          },
+          "info": "agent 代撤：DF-007→已撤回（不占第13条额度，v1.1/F1）；SIG-017→已过期（D-S2A-4）；TODO 作废",
+          "compare_args": null
+        },
+        {
+          "action_id": "H01_2",
+          "requestor": "assistant",
+          "name": "submit_deferral",
+          "arguments": {
+            "student_id": "S20240101",
+            "offering_id": "OF-2026SP-303-1",
+            "exam_id": "EX-0044",
+            "reason_type": "因病",
+            "filing_type": "考后补办"
+          },
+          "info": "生成 DF-008/SIG-018/材料 TODO",
+          "compare_args": null
+        },
+        {
+          "action_id": "H01_3",
+          "requestor": "user",
+          "name": "upload_material",
+          "arguments": {
+            "ref_type": "deferral_requests",
+            "ref_id": "DF-008",
+            "doc_type": "诊断证明",
+            "file_name": "诊断证明.pdf",
+            "hospital_level": "三甲"
+          },
+          "info": "UP-005，按第12条核验为已核验",
+          "compare_args": null
+        },
+        {
+          "action_id": "H01_4",
+          "requestor": "user",
+          "name": "confirm_action",
+          "arguments": {
+            "sig_id": "SIG-018"
+          },
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "H01_5",
+          "requestor": "assistant",
+          "name": "get_service_requests",
+          "arguments": {
+            "student_id": "S20240101",
+            "kind": "deferral"
+          },
+          "info": "触发 DF-008 审核结算→通过；返回含 DF-007 已撤回",
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_deferral_status",
+          "arguments": {
+            "request_id": "DF-007",
+            "expected_status": "已撤回"
+          },
+          "assert_value": true
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_deferral_status",
+          "arguments": {
+            "request_id": "DF-008",
+            "expected_status": "通过"
+          },
+          "assert_value": true
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_signature_status",
+          "arguments": {
+            "sig_id": "SIG-017",
+            "expected_status": "已过期"
+          },
+          "assert_value": true
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_signature_status",
+          "arguments": {
+            "sig_id": "SIG-018",
+            "expected_status": "已确认"
+          },
+          "assert_value": true
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_upload_status",
+          "arguments": {
+            "upload_id": "UP-005",
+            "expected_status": "已核验"
+          },
+          "assert_value": true
+        }
+      ],
+      "communicate_info": [
+        "已撤回",
+        "通过"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [
+      {
+        "id": "H01-i1",
+        "title": "拒签 reason 持久化口径待 S2A 确认",
+        "description": "若 S2A 将 reject_suggestion 的 reason 写入 DB，需保证金标/预测两侧逐字一致；移交口径=不持久化。",
+        "status": "open",
+        "created_at": "2026-10-04"
+      },
+      {
+        "id": "H01-i2",
+        "title": "编号可预测性",
+        "description": "DF-007/008、SIG-017/018、UP-005 依赖表内 max+1 编号；S3A 首验。",
+        "status": "open",
+        "created_at": "2026-10-04"
+      }
+    ],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app",
+      "upload_material",
+      "confirm_action",
+      "reject_suggestion"
+    ]
+  },
+  {
+    "id": "H10",
+    "description": {
+      "purpose": "考 P03 立场（逾期不受理查分）与咨询/申诉边界（D-S1B-4/v1.1 F2：咨询可建、不得以申诉替代）：唯一允许写入=一张咨询工单，若生成申诉工单或任何成绩变更，DB 双哈希必挂。",
+      "relevant_policies": "政策第15、16条（v1.1 F2 说明句）、第35条；tools-spec create_ticket 预检仅拦'申诉+成绩+逾期'。",
+      "notes": "基线局面：曹牧之 2025FA 各科 recorded_at=2026-01-23，锚点 2026-06-12 查分窗口（5 工作日）早已过——天然逾期，无需窗口覆写。目标终态：TK 新增（咨询/成绩/学院/待处理），promised_reply_at=+2 工作日。学生先要求建申诉工单/改成绩（Agent 若尝试会收 E-REVIEW-EXPIRED，被拒写不改 DB、仍零残留）。自由文本转写口径同 M20。"
+    },
+    "user_scenario": {
+      "persona": "情绪化：嗓门大、威胁曝光、把'系统 bug'说成事实；但依据讲死、给出台阶后会软下来转成务实请求。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "你认定《宏观经济学》的 D 是系统被改了，情绪很大，要'申诉改分'，威胁不解决就全网曝光。",
+        "known_info": "学号 S20230201；成绩是 2026-01-23 公布的；你路过教务处时看到过公布日期。",
+        "unknown_info": "不知道查分窗口只有公布后 5 个工作日；不知道申诉类工单不能替代查分、但咨询工单可以了解情况。",
+        "task_instructions": "开场就报学号 S20230201，坚持'帮我建申诉工单把《宏观经济学》的 D 改掉'（成绩 2026-01-23 公布，你路过教务处看到过公布日期）。如果 Agent 依据第16条拒绝（逾期不受理查分、申诉不能替代查分），你情绪升级放话'我就曝到网上去'，但始终不让它建申诉工单。如果它解释可以提交一张咨询类工单了解情况，你冷静下来逐字口述标题'宏观经济学成绩记载咨询'与内容'学号 S20230201，《宏观经济学》成绩公布后未申请查分现已逾期，本人认为记载与卷面不符，咨询后续处理渠道。'——并坚持'就按我口述的原样建这张咨询工单，谢谢'。若它讲完条款还不动手建单，你再催一次'那就建呀，字都给你了'；仍不动就不废话（它建错类目或写错字，你纠正一次，不改就停）。你不会上传任何材料或签署任何东西。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-12 10:00"
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20230201"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "H10_0",
+          "requestor": "assistant",
+          "name": "create_ticket",
+          "arguments": {
+            "student_id": "S20230201",
+            "category": "咨询",
+            "module": "成绩",
+            "title": "宏观经济学成绩记载咨询",
+            "content": "学号 S20230201，《宏观经济学》成绩公布后未申请查分现已逾期，本人认为记载与卷面不符，咨询后续处理渠道。"
+          },
+          "info": "生成 TK-006：咨询/成绩/学院/待处理 + promised_reply_at(+2工作日)",
+          "compare_args": null
+        }
+      ],
+      "env_assertions": null,
+      "communicate_info": [
+        "2026-01-23",
+        "咨询"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app"
+    ]
+  },
+  {
+    "id": "H13",
+    "description": {
+      "purpose": "考四合一连环拒绝的精准性：P05（学年内两门 F＋警示在身→评奖拒，重修'正在修'不消除）、P14（转专业仅一次→拒并给辅修/双学位建议）、P03（成绩 1/23 公布逾期查分→拒）——拒三条的同时必须给出一条合法出路（下一轮评定路径），全题零写。",
+      "relevant_policies": "政策第16、19、20、21、24条；第20条替代路径（辅修/双学位）。",
+      "notes": "initial_state 仅置 students.S20230301.major_change_used=true（其余皆种子自然态：warning_records 2025FA 单学期不及格学分≥8；GR-0193 高数A(下) F、GR-0194 材料力学 F 均在 2025-2026 学年、recorded 2026-01-23；EN-0292/0293 本学期重修在读）。AW-005 二等人民奖学金窗口 2026-06-19 止（窗口不构成拒绝理由）。判分＝两库哈希不变＋条款子串。"
+    },
+    "user_scenario": {
+      "persona": "较真：三连问逐条顶嘴，对每条拒绝都举反例（'可我正在重修''找学院特批''让教务帮我调卷子'），直到出路讲明白。",
+      "instructions": {
+        "domain": "campus",
+        "reason_for_call": "期末前你想一口气办三件事：申请人民奖学金二等、再转一次专业、查上学期《高等数学A(下)》的卷面分。",
+        "known_info": "学号 S20230301；上学期《高等数学A(下)》《材料力学》两门挂了，本学期都在重修（还没出成绩）；2025 年秋季受过一次学业警示；大一转过一次专业；那两门成绩 1 月 23 日就公布了。",
+        "unknown_info": "不知道'正在重修'救不了本轮评定；不知道转专业在校期间仅限一次；不知道查分窗口 5 个工作日已过。",
+        "task_instructions": "按顺序提出三个诉求，并对每个拒绝结果各追问一轮（例如'可我重修过了''学院不能出个证明特批吗''能不能让教务帮我调卷看看'）。等 Agent 把三处拒绝的依据讲清、并告诉你'重修成绩合格后警示解除，可参加下一轮评定'这条出路，你确认一句'那我这轮什么都先别申请了？'后收尾。全程不要让它提交任何申请、工单或签署。"
+      }
+    },
+    "ticket": null,
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "env": {
+            "current_time": "2026-06-12 10:00"
+          },
+          "students": {
+            "S20230301": {
+              "major_change_used": true
+            }
+          }
+        },
+        "user_data": null
+      },
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "bind_student",
+          "arguments": {
+            "student_id": "S20230301"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [],
+      "env_assertions": null,
+      "communicate_info": [
+        "第24条",
+        "第20条",
+        "第16条"
+      ],
+      "nl_assertions": null,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ]
+    },
+    "issues": [],
+    "required_documents": null,
+    "user_tools": [
+      "check_student_app"
+    ]
+  }
+]

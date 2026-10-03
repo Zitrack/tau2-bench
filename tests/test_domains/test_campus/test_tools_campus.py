@@ -167,6 +167,22 @@ class TestDeferralChain:
         assert t.db.deferral_requests[r.request_id].status == "通过"
         assert t.user_db.uploads[up.upload_id].status == "已核验"
 
+    def test_upload_before_sign_completes_upload_todo(self, env):
+        """D-S3A-3：签署前上传有效材料，材料上传待办即完成，业务行仍待签署。"""
+        t, u = env.tools, env.user_tools
+        r = t.submit_deferral("S20230103", "OF-2026SP-504-1", "EX-0050", "因病", "考后补办")
+        u.bind_student("S20230103")
+        up = u.upload_material("deferral_requests", r.request_id, "诊断证明", "诊断证明.pdf", "三甲")
+        df = t.db.deferral_requests[r.request_id]
+        assert df.status == "待签署"
+        todo = next(v for v in t.user_db.app_todos.values()
+                    if v.ref_id == r.request_id and v.type == "缓考材料上传")
+        assert todo.status == "已完成"
+        # 后续签署一路走到通过（材料已齐，不再进入待材料）
+        u.confirm_action(r.sig_id)
+        env.sync_tools()
+        assert t.db.deferral_requests[r.request_id].status == "通过"
+
     def test_pending_sign_expiry_by_advance_time(self, env):
         t, u = env.tools, env.user_tools
         r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "冲突", "考前正常")

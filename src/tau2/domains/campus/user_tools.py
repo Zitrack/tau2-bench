@@ -271,6 +271,11 @@ class CampusUserTools(ToolKitBase):
                 row.status = DeferralStatus.SUBMITTED.value
                 self._complete_todo(TodoType.DEFERRAL_UPLOAD.value, ref_id)
                 message += f"；材料有效，缓考申请 {ref_id} 进入待审（已提交待审）。"
+            elif row.status == DeferralStatus.PENDING_SIGN.value:
+                # D-S3A-3：签署前已上传有效材料——材料上传待办即完成（办结语义，第12条），
+                # 业务状态仍留"待签署"，等学生本人完成签署确认。
+                self._complete_todo(TodoType.DEFERRAL_UPLOAD.value, ref_id)
+                message += f"；材料有效并挂接 {ref_id}，待本人完成签署确认。"
         elif ref_type == "scholarship_apps":
             row.material_upload_ids.append(up_id)
             if status == UploadStatus.UPLOADED and doc_type in VALID_FAST_DOC_TYPES:

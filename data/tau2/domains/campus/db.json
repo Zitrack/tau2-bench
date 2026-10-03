@@ -478,7 +478,7 @@
       "expected_graduation_term": "2027FA",
       "phone": "138****1202",
       "email": "s20230202@stu.qcuniv.edu.cn",
-      "gpa": 3.45,
+      "gpa": 3.44,
       "aid_pool_status": "未入库",
       "aid_pool_valid_through": null,
       "warning_records": [],
@@ -8987,21 +8987,6 @@
       "is_retake": false,
       "replaces_grade_id": null
     },
-    "GR-0053": {
-      "grade_id": "GR-0053",
-      "student_id": "S20240101",
-      "offering_id": "OF-2025FA-302-1",
-      "term": "2025FA",
-      "academic_year": "2025-2026",
-      "attempt_no": 1,
-      "score": 83.0,
-      "grade_level": "B",
-      "gpa_points": 3.0,
-      "is_final": true,
-      "recorded_at": "2026-01-23 09:00",
-      "is_retake": false,
-      "replaces_grade_id": null
-    },
     "GR-0054": {
       "grade_id": "GR-0054",
       "student_id": "S20240101",
@@ -9045,7 +9030,7 @@
       "is_final": true,
       "recorded_at": "2026-02-27 09:00",
       "is_retake": false,
-      "replaces_grade_id": null
+      "replaces_grade_id": "GR-0055"
     },
     "GR-0057": {
       "grade_id": "GR-0057",
@@ -10277,21 +10262,6 @@
       "is_retake": false,
       "replaces_grade_id": null
     },
-    "GR-0139": {
-      "grade_id": "GR-0139",
-      "student_id": "S20230202",
-      "offering_id": "OF-2025FA-502-1",
-      "term": "2025FA",
-      "academic_year": "2025-2026",
-      "attempt_no": 1,
-      "score": 87.0,
-      "grade_level": "B+",
-      "gpa_points": 3.5,
-      "is_final": true,
-      "recorded_at": "2026-01-23 09:00",
-      "is_retake": false,
-      "replaces_grade_id": null
-    },
     "GR-0140": {
       "grade_id": "GR-0140",
       "student_id": "S20230202",
@@ -10350,7 +10320,7 @@
       "is_final": true,
       "recorded_at": "2026-02-27 09:00",
       "is_retake": false,
-      "replaces_grade_id": null
+      "replaces_grade_id": "GR-0142"
     },
     "GR-0144": {
       "grade_id": "GR-0144",
