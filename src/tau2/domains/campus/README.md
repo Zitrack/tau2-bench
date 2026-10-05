@@ -1,0 +1,123 @@
+# campus — University Academic-Affairs Service Domain (τ²-bench first native Chinese domain)
+
+> Domain package for [τ²-bench](https://github.com/sierra-research/tau2-bench) (MIT), pinned to **v1.0.1** scoring.
+> All institutions, people, and records in this domain are **fictional** (the university is "青川大学 / Qingchuan University", a made-up school); policy material is rewritten and de-identified from public regulations. No real personal data exists anywhere in this package.
+
+## 1. Domain overview (English)
+
+`campus` is a natively designed **Chinese** domain for university academic-affairs service (选课/退课、考试缓考、成绩查分与申诉、奖助学金、证明开具、学籍与工单). It is *not* a translation: policy, database, tasks, and user personas are all written for the Chinese higher-education setting, while the scoring protocol stays exactly on the official τ²-bench v1.0.1 track (`reward_basis = [DB, COMMUNICATE]` + `env_assertions`; `RewardType.ACTION` not used), so results read directly against the official leaderboard conventions.
+
+- **Policy**: `data/tau2/domains/campus/policy.md` — a 36-article service regulation for the fictional university, deliberately packed with time-boundary traps (补退选窗口、缓考时限、维护窗口、月末结账、申诉逐级…).
+- **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **17 refusal tasks** (privacy, 越级申诉, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
+- **Data**: `db.json` (14 tables) + `user_db.json` (students act through their own app).
+- **Tests**: `tests/test_domains/test_campus/` — 49 pytest cases (tools, replay, contract).
+
+## 2. Dual-control design
+
+Following the τ²-bench dual-control protocol, **both** sides hold tools:
+
+| Side | Tools | Role |
+|---|---|---|
+| Agent (customer-service) | **15** tools (`tools.py`) | look up, apply, withdraw, create tickets… must guide the student to complete multi-step procedures |
+| Student (simulated user) | **4** user tools (`user_tools.py`) | upload materials, confirm/sign, and **refuse** — the agent cannot do these *for* the student |
+
+Hard tasks are multi-chain: the student must perform 3–4 actions in their own app while the agent keeps the procedure consistent (e.g. withdrawal requires agent request + student signature). The user simulator is driven by per-task scripted personas (six archetypes + a compliance dimension, non-cooperative by design), so an over-cooperative user cannot silently complete the task for the agent.
+
+## 3. Leaderboard (5 rows / 4 vendors, by pass^4)
+
+Pass^1 = share of passing trials (of 200); pass^4 = tasks passing **4/4** (of 50); 4 trials/task, seed=20261004, temperature=0, max_steps=60; user simulator + NL justification model = DeepSeek-V4.1-Flash.
+
+| # | Model | pass^1 | pass^4 | avg turns | easy / medium / hard |
+|---|---|---|---|---|---|
+| 1 | DeepSeek V4.1-Flash (anchor) | 0.975 | 0.900 | 6.08 | 1.000 / 0.963 / 0.967 |
+| 2 | Qwen3.8-Flash | 0.860 | 0.720 | 5.41 | 0.967 / 0.800 / 0.833 |
+| 3 | GLM-5.3-Flash | 0.780 | 0.680 | 5.13 | 0.783 / 0.813 / 0.733 |
+| 4 | GLM-5.3 | 0.785 | 0.660 | 5.30 | 0.833 / 0.825 / 0.683 |
+| 5 | MiMo-V2.6-Pro | 0.835 | 0.640 | 5.22 | 0.883 / 0.875 / 0.733 |
+
+All numbers are recomputed programmatically from `results.json` (never hand-copied). Row 5 as-run includes 1 infrastructure-failed trial (upstream outage): excluding it gives 0.840 / 0.660 — both calibers are documented. Closed-source flagship models were intentionally not run (cost vs. information gain); the anchor row carries the ceiling reference.
+
+## 4. Protocol & grading declarations
+
+1. Tasks with multi-chain procedures open with the user stating their student ID (hard beat; omitting it provokes ID hallucination).
+2. Free-text tickets (M20) are graded on exact DB hashes — rewording loses points; single-trial variance is disclosed as-is.
+3. Anchor row and user/NL-justification backend are the same DeepSeek-V4.1-Flash (legacy alias `deepseek-chat` vs canonical `deepseek-flash`, same `system_fingerprint`).
+4. Agents occasionally answer in English and "translate away" Chinese policy strings → COMMUNICATE misses; assertion strings are tool-guaranteed entities, but the mechanism is disclosed.
+5. Non-cooperative personas are fixed across all tested models (per-task scripted in `tasks.json` + `personas`).
+6. seed=20261004, temperature=0 (agent/user/judge), max_steps=60 for every run.
+
+**Grading (judge) statement**: COMMUNICATE items use **deterministic substring matching** against the agent's full reply text (no whitespace/full-width normalization); DB items use terminal-state hash comparison; both must pass. The `deepseek-flash` model only writes justification text — the met/not-met decision is fully reproducible by rule (530/530 in calibration). Paraphrases may therefore score as misses; ~60% of misses in the audited population are such string-level engineering noise rather than capability failures.
+
+## 5. Reproduce
+
+```sh
+# install (Python >=3.12,<3.14)
+uv sync
+
+# domain tests (49 cases)
+uv run pytest tests/test_domains/test_campus
+
+# validate data
+uv run tau2 check-data
+
+# run the domain with any OpenAI-compatible agent
+uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek-flash \
+  --num-trials 4 --task-split-name base
+
+# re-score an existing trajectory dump against current tasks
+uv run tau2 evaluate-trajs <results.json> --fresh-tasks
+```
+
+Leaderboard rows were produced with a dual-channel harness (agent on an OpenAI-compatible endpoint, user simulator + justification model pinned to `deepseek-flash`) writing `results.json` + `meta.json` per model; full protocol notes, cost disclosures, and the row-addition guide live in the project's `leaderboard-page.md`.
+
+## 6. Citation
+
+```bibtex
+@misc{tau2-zh-campus,
+  title        = {Tau2-ZH: A Native Chinese Campus Domain for $\tau^2$-bench},
+  author       = {{Tau2-ZH Project}},
+  year         = {2026},
+  howpublished = {\url{https://github.com/Zitrack/tau2-bench} (dev/campus branch)},
+  note         = {50 tasks; scoring pinned to tau2-bench v1.0.1}
+}
+```
+
+Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.07982.
+
+---
+---
+
+# campus — 高校教务办事域（τ²-bench 首个原生中文域）
+
+> [τ²-bench](https://github.com/sierra-research/tau2-bench)（MIT 许可）的域扩展，计分钉死官方 **v1.0.1**。
+> 本域全部机构、人物、记录均**虚构**（学校为"青川大学"，虚构校名）；政策文本由公开规章改写脱敏，包内不含任何真实个人数据。
+
+## 1. 域概要
+
+`campus` 是为中文高校教务场景**原生设计**（非翻译）的域：选课/补退选、考试缓考、成绩查分与申诉、奖助学金、证明开具、学籍与工单。政策（36 条，含补退选窗口、缓考时限、维护窗口、月末结账、逐级申诉等时限坑）、数据库（14 表）、50 题任务（easy 15 / medium 20 / hard 15，含 17 道拒绝题）与 persona 全部中文原生；判分口径与官方同构（`[DB, COMMUNICATE]` + `env_assertions`，不用 ACTION），结果可与官方榜单同读。
+
+## 2. Dual-control 设计
+
+两侧都有工具：客服 agent **15** 个工具负责查询/申请/撤回/建单并**引导**学生走完流程；学生（模拟用户）**4** 个用户工具在自己的 App 里**上传材料、确认签署、拒绝**——这些动作 agent 无法代做。难题为多链并发（agent 发起 + 学生签署双控），user simulator 按逐题钉死脚本（六型 persona + 顺从维度，非合作设计）执行，防止模拟用户过度合作替 agent 完成任务。
+
+## 3. 榜单（5 行 / 4 家厂商，按 pass^4 降序）
+
+（口径与数字同上英文版 §3；全部数字由 results.json 程序化重算。）
+
+## 4. 协议与判分声明
+
+（六条协议声明 + 确定性子串匹配判分声明同上英文版 §4；要点：communicate 判分对逐字改写敏感，母体约 60% MISS 属字面工程噪声。）
+
+## 5. 复现
+
+```sh
+uv sync
+uv run pytest tests/test_domains/test_campus        # 49 项测试
+uv run tau2 check-data                              # 数据校验
+uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek-flash \
+  --num-trials 4 --task-split-name base
+```
+
+## 6. 引用格式
+
+见上方英文版 §6（BibTeX）；同时请引用 τ²-bench 本体（arXiv:2506.07982）。
