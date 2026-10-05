@@ -1229,8 +1229,14 @@ class CampusTools(ToolKitBase):
         """
         self._check_maintenance()
         s = self._student(student_id)
+        # ① 学籍＝在读（第10条，M1-A5/P1-9：候补同享选课服务约束）
+        if s.student_status != StudentStatus.ACTIVE.value:
+            raise ValueError(f"当前学籍状态为'{_s(s.student_status)}'（政策第10条）：非在读状态不享受选课服务（含候补）。")
         off = self._offering(offering_id)
         course_name = self._course_name(off)
+        # ② 已停开不可候补（第9条相关，M1-A6/P1-8）
+        if off.status == OfferingStatus.SUSPENDED.value:
+            raise ValueError(f"《{course_name}》本学期已停开（第9条相关）：不可加入候补。")
         if s.waitlist_abandon_count >= 3:
             raise ValueError(E_WAITLIST_FROZEN)
         deadline_48h = parse_time(off.adddrop_deadline) - timedelta(hours=48)
@@ -1278,6 +1284,12 @@ class CampusTools(ToolKitBase):
             raise ValueError(f"考试 {exam_id} 不属于开课 {offering_id}，请核对考试与课程对应关系。")
         off = self._offering(offering_id)
         course_name = self._course_name(off)
+        # M1-A3（P1-5）：缓考绑定本人在该开课的在读选课行（政策第12/10条）
+        if not any(
+                e.student_id == student_id and e.offering_id == offering_id
+                and e.status in (EnrollmentStatus.ENROLLED.value, EnrollmentStatus.SPECIAL_CHANNEL_REVIEW.value)
+                for e in self.db.enrollments.values()):
+            raise ValueError("未找到该课程的在读选课记录，无法申请缓考（政策第12/10条）：缓考仅适用于本人已选课程。")
         sched = parse_time(exam.scheduled_at)
         if reason_type == DeferralReasonType.CONFLICT.value:
             if filing_type != DeferralFilingType.BEFORE_EXAM.value:
@@ -1286,6 +1298,9 @@ class CampusTools(ToolKitBase):
             if self.now > deadline:
                 raise ValueError(E_DEFERRAL_EXPIRED)
         elif reason_type == DeferralReasonType.ILLNESS.value:
+            # M1-A4（P1-6）：因病仅考后补办（第12条二）
+            if filing_type != DeferralFilingType.AFTER_EXAM.value:
+                raise ValueError("因病缓考属考后补办（第12条二）：须于考试结束后3个工作日内补办；考前申报仅适用于冲突缓考。")
             deadline = day_end(nth_workday_after_date(sched, 3))
             if self.now > deadline:
                 raise ValueError(E_DEFERRAL_EXPIRED)
@@ -1409,6 +1424,8 @@ class CampusTools(ToolKitBase):
         """
         self._check_maintenance()
         s = self._student(student_id)
+        if copy_count < 1:
+            raise ValueError("开具份数至少为 1 份（政策第32条）。")
         if copy_count > 5:
             raise ValueError("同一申请单笔开具份数不超过5份（政策第32条），超出请分单申请。")
         if delivery == CertDelivery.PROXY.value and (not proxy_name or not proxy_id_masked):
@@ -1463,8 +1480,11 @@ class CampusTools(ToolKitBase):
 
     @is_tool(ToolType.WRITE)
     def create_ticket(self, student_id: str, category: str, module: str, title: str,
-                      content: str, parent_ticket_id: str = "") -> TicketResult:
+                      content: str, parent_ticket_id: str = "",
+                      target_grade_id: str = "") -> TicketResult:
         """工单（第34/35条）。仅拦'申诉+成绩+逾期'（v1.1-F2）；复核申诉必须挂学院原工单（越级 E-LEVEL）。
+        申诉+成绩可选传 target_grade_id 按该成绩判 5 工作日窗（第16条）；
+        不传（默认空）时判窗行为与不带该参数完全一致（沿用原有"任一成绩在窗"扫描）。
 
         Args:
             student_id: 学号。
@@ -1473,6 +1493,7 @@ class CampusTools(ToolKitBase):
             title: 工单标题。
             content: 工单内容（实名+学号+事由，第35条）。
             parent_ticket_id: 复核申诉时必填的原学院工单号 TK-xxx。
+            target_grade_id: 可选，申诉目标成绩行 GR-xxx；指定后仅按该成绩判窗，空＝原行为不变。
         """
         self._check_maintenance()
         self._student(student_id)
@@ -1480,16 +1501,25 @@ class CampusTools(ToolKitBase):
             raise ValueError("工单类别只能为：咨询 / 申诉 / 建议（第35条）。")
         # 第16条查分预检：仅"申诉+成绩+逾期"组合拦截（v1.1-F2，D4/R1 定案）
         if category == TicketCategory.APPEAL.value and module == TicketModule.GRADE.value:
-            recorded = [
-                g for g in self.db.grades.values()
-                if g.student_id == student_id and g.recorded_at
-            ]
-            if recorded:
-                within = any(
-                    self.now <= day_end(add_workdays(parse_time(g.recorded_at), 5)) for g in recorded
-                )
-                if not within:
+            if target_grade_id:
+                # M1-A2（P1-3）：绑定目标成绩时按该行判窗（缺省 target 时下方 any() 扫描为修前原行为）
+                grade = self.db.grades.get(target_grade_id)
+                if grade is None or grade.student_id != student_id:
+                    raise ValueError(f"未找到成绩记录 {target_grade_id}（或不属于该学号）。")
+                # 未公布成绩（recorded_at 为空）无查分窗口起点，不作逾期拦截（与原扫描"仅计已公布成绩"口径一致）
+                if grade.recorded_at and self.now > day_end(add_workdays(parse_time(grade.recorded_at), 5)):
                     raise ValueError(E_REVIEW_EXPIRED)
+            else:
+                recorded = [
+                    g for g in self.db.grades.values()
+                    if g.student_id == student_id and g.recorded_at
+                ]
+                if recorded:
+                    within = any(
+                        self.now <= day_end(add_workdays(parse_time(g.recorded_at), 5)) for g in recorded
+                    )
+                    if not within:
+                        raise ValueError(E_REVIEW_EXPIRED)
         level = TicketLevel.COLLEGE
         status = TicketStatus.PENDING if category != TicketCategory.APPEAL.value else TicketStatus.COLLEGE_WORKING
         if parent_ticket_id:
@@ -1508,6 +1538,7 @@ class CampusTools(ToolKitBase):
             created_at=self._server_time(),
             promised_reply_at=fmt_time(day_end(add_workdays(self.now, reply_days[category]))),
             parent_ticket_id=parent_ticket_id or None,
+            target_grade_id=target_grade_id or None,
         )
         return TicketResult(
             server_time=self._server_time(), ticket_id=tk_id, status=status, level=level,

@@ -1,0 +1,127 @@
+"""Full gold-replay CI for all 50 campus tasks (M1 A1, MODIFY-PLAN §3).
+
+Aligns with upstream #499: the local evaluator (evaluator_env.py) swallows
+exceptions raised while replaying golden actions, so a half-executed gold DB
+silently becomes the grading target for every agent. This test replays each
+task's `evaluation_criteria.actions` on a fresh environment **without any
+try/except** — any exception fails the test — and then asserts terminal-state
+invariants plus replay determinism:
+
+  ① no orphan SIG/TODO rows: every (ref_type, ref_id) resolves to a row in
+     the task's own main DB table;
+  ② per-offering counts consistent and non-negative: `enrolled_count` equals
+     the number of enrollment rows with status=已选 — caliber verified
+     empirically on all 50 task seeds (data_model.py:391 contract: special-
+     channel review rows are NOT counted; see M1 handoff); `waitlist_count`
+     equals the number of rows with status=候补中;
+  ③ unique active waitlist positions per offering;
+  ④ determinism: a second fresh environment replaying the same task yields
+     identical get_db_hash()/get_user_db_hash().
+
+M1 baseline (2026-10-05): gold-action exceptions 0/50; invariants ①③④ pass
+50/50; invariant ② was red on 4 task/offering pairs (count bookkeeping drift
+in task data / settle special-channel branches — root causes and remediation
+in 02-plan/handoffs/M1-20261005-A组补洞与披露.md). R11 approved landing this
+file with an explicit KNOWN_COUNT_GAPS exemption table (exactly four pairs;
+the gaps are fixed by M2-B0, after which the table must be emptied — see
+R11-review-record.md §3 and MODIFY-PLAN M2 DoD①).
+"""
+
+import pytest
+
+from tau2.domains.campus.environment import get_environment, get_tasks
+
+TASK_IDS = [t.id for t in get_tasks(task_split_name=None)]
+
+MAIN_TABLES = (
+    "enrollments",
+    "deferral_requests",
+    "scholarship_apps",
+    "certificates",
+    "tickets",
+)
+
+# R11 批准（R11-review-record.md §3）：修前基线已知 enrolled_count 计数缺口，
+# 命中 (task, offering) 的题跳过②中该 offering 的 enrolled_count 一致性断言，
+# 其余 offering 与不变量①③④照常全查。
+# M2-B0 落地后必须清空本表（MODIFY-PLAN M2 DoD①）。
+KNOWN_COUNT_GAPS = {
+    ("M03", "OF-2026SP-603-1"),  # 任务直改退课未同步计数 → M2-B0②修复
+    ("M10", "OF-2026SP-402-1"),  # 特别通道批准分支 -1 欠账（旧代码还含伪递补副作用）→ M2-B0①重算修复
+    ("M14", "OF-2026SP-402-1"),  # 回退分支不加计数 → 同上
+    ("H12", "OF-2026SP-402-1"),  # 同 M14
+}
+
+
+def _replay(task):
+    """Fresh env → task initial state → gold actions (exceptions propagate)."""
+    init = task.initial_state
+    env = get_environment()
+    env.set_state(
+        initialization_data=init.initialization_data if init else None,
+        initialization_actions=init.initialization_actions if init else None,
+        message_history=(init.message_history or []) if init else [],
+        strict=True,
+    )
+    for action in (task.evaluation_criteria.actions if task.evaluation_criteria else []) or []:
+        # No try/except on purpose (upstream #499 countermeasure).
+        env.make_tool_call(tool_name=action.name, requestor=action.requestor, **action.arguments)
+    return env
+
+
+def _invariant_violations(env, task_id):
+    db, user_db = env.tools.db, env.tools.user_db
+    tables = {name: getattr(db, name) for name in MAIN_TABLES}
+    problems = []
+
+    # ① orphan SIG/TODO
+    for sig in user_db.pending_signatures.values():
+        if sig.ref_type not in tables or sig.ref_id not in tables[sig.ref_type]:
+            problems.append(f"orphan SIG {sig.sig_id} -> {sig.ref_type}/{sig.ref_id}")
+    for todo in user_db.app_todos.values():
+        if todo.ref_type not in tables or todo.ref_id not in tables[todo.ref_type]:
+            problems.append(f"orphan TODO {todo.todo_id} -> {todo.ref_type}/{todo.ref_id}")
+
+    for off in db.course_offerings.values():
+        rows = [e for e in db.enrollments.values() if e.offering_id == off.offering_id]
+        enrolled = sum(1 for e in rows if e.status == "已选")
+        waitlisted = sum(1 for e in rows if e.status == "候补中")
+        # ② counts consistent and non-negative (caliber: status=已选; special-
+        #    channel rows not counted — seed-verified, see module docstring)
+        if off.enrolled_count < 0 or off.waitlist_count < 0:
+            problems.append(
+                f"negative count {off.offering_id}: "
+                f"enrolled={off.enrolled_count} waitlist={off.waitlist_count}"
+            )
+        exempt = (task_id, off.offering_id) in KNOWN_COUNT_GAPS
+        if off.enrolled_count != enrolled and not exempt:
+            problems.append(
+                f"enrolled_count {off.offering_id}: count={off.enrolled_count} rows(已选)={enrolled}"
+            )
+        if off.waitlist_count != waitlisted:
+            problems.append(
+                f"waitlist_count {off.offering_id}: count={off.waitlist_count} rows(候补中)={waitlisted}"
+            )
+        # ③ active waitlist positions unique
+        positions = [e.waitlist_position for e in rows if e.status == "候补中"]
+        if len(positions) != len(set(positions)):
+            problems.append(f"duplicate waitlist positions {off.offering_id}: {positions}")
+    return problems
+
+
+@pytest.mark.parametrize("task_id", TASK_IDS)
+def test_gold_replay_all(task_id):
+    """Replay every task's gold actions exception-free; assert terminal
+    invariants and per-task double-hash determinism."""
+    tasks = {t.id: t for t in get_tasks(task_split_name=None)}
+    task = tasks[task_id]
+
+    env = _replay(task)
+
+    # ④ determinism: second fresh env, full replay, both hashes equal
+    env2 = _replay(task)
+    assert env.get_db_hash() == env2.get_db_hash(), f"{task_id}: agent DB hash not deterministic"
+    assert env.get_user_db_hash() == env2.get_user_db_hash(), f"{task_id}: user DB hash not deterministic"
+
+    problems = _invariant_violations(env, task_id)
+    assert not problems, f"{task_id}: terminal-state invariants violated: {problems}"

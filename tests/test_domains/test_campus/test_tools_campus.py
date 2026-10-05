@@ -168,9 +168,10 @@ class TestDeferralChain:
         assert t.user_db.uploads[up.upload_id].status == "已核验"
 
     def test_upload_before_sign_completes_upload_todo(self, env):
-        """D-S3A-3：签署前上传有效材料，材料上传待办即完成，业务行仍待签署。"""
+        """D-S3A-3：签署前上传有效材料，材料上传待办即完成，业务行仍待签署。
+        M1-A3 适配：场景从 504/EX-0050（该生无选课行，绑定守卫后非法）改为本人已选的 203/EX-0049，断言不变。"""
         t, u = env.tools, env.user_tools
-        r = t.submit_deferral("S20230103", "OF-2026SP-504-1", "EX-0050", "因病", "考后补办")
+        r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
         u.bind_student("S20230103")
         up = u.upload_material("deferral_requests", r.request_id, "诊断证明", "诊断证明.pdf", "三甲")
         df = t.db.deferral_requests[r.request_id]
@@ -419,3 +420,68 @@ class TestReadTools:
         rs = env.tools.get_service_requests("S20250403", "deferral")
         df6 = [x for x in rs.requests if x.request_id == "DF-006"][0]
         assert "缺签署" in " ".join(df6.missing)
+
+
+# ------------------------------------------------------------------ M1 一致性守卫（A2–A7，R10 P1-3/5/6/8/9、P2-9）
+
+class TestM1ConsistencyGuards:
+    def test_appeal_target_grade_in_window_succeeds(self, env):
+        # GR-0033 公布 2026-01-23 09:00（周五）→ 5 工作日窗至 2026-01-30 23:59
+        set_now(env, "2026-01-26 10:00")
+        r = env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103",
+                                    target_grade_id="GR-0033")
+        assert env.tools.db.tickets[r.ticket_id].target_grade_id == "GR-0033"
+
+    def test_appeal_target_grade_expired_rejected(self, env):
+        # 种子时点 2026-06-12：GR-0033（2026-01-23 公布）早已越 5 工作日窗
+        with pytest.raises(ValueError, match="成绩公布已超5个工作日"):
+            env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103",
+                                    target_grade_id="GR-0033")
+
+    def test_appeal_target_overrides_any_grade_scan(self, env):
+        """P1-3 修复核心语义：指定目标按该成绩判窗——其他成绩在窗也救不了越窗的目标。"""
+        set_now(env, "2026-01-26 10:00")  # GR-0033 在窗；GR-0028（2025-01-24 公布）越窗
+        with pytest.raises(ValueError, match="成绩公布已超5个工作日"):
+            env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103",
+                                    target_grade_id="GR-0028")
+
+    def test_appeal_target_grade_missing_or_not_own(self, env):
+        with pytest.raises(ValueError, match="未找到成绩记录 GR-9999（或不属于该学号）"):
+            env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103",
+                                    target_grade_id="GR-9999")
+        other = next(g.grade_id for g in env.tools.db.grades.values() if g.student_id != "S20230103")
+        with pytest.raises(ValueError, match="未找到成绩记录 .*（或不属于该学号）"):
+            env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103",
+                                    target_grade_id=other)
+
+    def test_appeal_without_target_unchanged(self, env):
+        """不传 target_grade_id：判窗行为与修前完全一致（种子时点拒、窗内过、行不带 target）。"""
+        with pytest.raises(ValueError, match="成绩公布已超5个工作日"):
+            env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103")
+        set_now(env, "2026-01-26 10:00")
+        r = env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103")
+        assert env.tools.db.tickets[r.ticket_id].target_grade_id is None
+
+    def test_deferral_requires_own_enrollment(self, env):
+        # S20250401 在读但未选 OF-2026SP-203-1 → 缓考绑定守卫拒绝（第12/10条）
+        with pytest.raises(ValueError, match="未找到该课程的在读选课记录，无法申请缓考（政策第12/10条）"):
+            env.tools.submit_deferral("S20250401", "OF-2026SP-203-1", "EX-0049", "冲突", "考前正常")
+
+    def test_illness_requires_post_exam_filing(self, env):
+        # 因病 + 考前正常 → 拒（第12条二）；因病主路径由 test_illness_* 与 A1 金标重放钉住
+        with pytest.raises(ValueError, match="因病缓考属考后补办（第12条二）"):
+            env.tools.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考前正常")
+
+    def test_waitlist_requires_active_status(self, env):
+        # S20240105 休学 → 学籍守卫先于窗口/容量检查触发（第10条）
+        with pytest.raises(ValueError, match="当前学籍状态为'休学'（政策第10条）：非在读状态不享受选课服务（含候补）"):
+            env.tools.join_waitlist("S20240105", "OF-2026SP-402-1")
+
+    def test_waitlist_rejects_suspended_offering(self, env):
+        # OF-2026SP-401-1 已停开 → 停开守卫先于 48h 截止检查触发（第9条相关）
+        with pytest.raises(ValueError, match="本学期已停开（第9条相关）：不可加入候补"):
+            env.tools.join_waitlist("S20250401", "OF-2026SP-401-1")
+
+    def test_cert_copy_count_lower_bound(self, env):
+        with pytest.raises(ValueError, match="开具份数至少为 1 份（政策第32条）"):
+            env.tools.request_certificate("S20230103", "在读证明", copy_count=0)

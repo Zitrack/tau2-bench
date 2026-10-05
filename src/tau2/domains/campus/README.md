@@ -10,7 +10,7 @@
 - **Policy**: `data/tau2/domains/campus/policy.md` — a 36-article service regulation for the fictional university, deliberately packed with time-boundary traps (补退选窗口、缓考时限、维护窗口、月末结账、申诉逐级…).
 - **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **17 refusal tasks** (privacy, 越级申诉, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
 - **Data**: `db.json` (14 tables) + `user_db.json` (students act through their own app).
-- **Tests**: `tests/test_domains/test_campus/` — 49 pytest cases (tools, replay, contract).
+- **Tests**: `tests/test_domains/test_campus/` — 109 pytest cases (tools, replay, contract, full 50-task gold-replay CI).
 
 ## 2. Dual-control design
 
@@ -46,6 +46,8 @@ All numbers are recomputed programmatically from `results.json` (never hand-copi
 5. Non-cooperative personas are fixed across all tested models (per-task scripted in `tasks.json` + `personas`).
 6. seed=20261004, temperature=0 (agent/user/judge), max_steps=60 for every run.
 
+Scoring-contract note: all 50 tasks ship `reward_basis=[DB, COMMUNICATE]` (the upstream default); the 53 `env_assertions` across 25 tasks are diagnostic outputs (reported in `RewardInfo.env_assertions`) and do not gate the reward, per the official v1.0.1 contract (docs/evaluation.md).
+
 **Grading (judge) statement**: COMMUNICATE items use **deterministic substring matching** against the agent's full reply text (no whitespace/full-width normalization); DB items use terminal-state hash comparison; both must pass. The `deepseek-flash` model only writes justification text — the met/not-met decision is fully reproducible by rule (530/530 in calibration). Paraphrases may therefore score as misses; ~60% of misses in the audited population are such string-level engineering noise rather than capability failures.
 
 ## 5. Reproduce
@@ -54,7 +56,7 @@ All numbers are recomputed programmatically from `results.json` (never hand-copi
 # install (Python >=3.12,<3.14)
 uv sync
 
-# domain tests (49 cases)
+# domain tests (109 cases)
 uv run pytest tests/test_domains/test_campus
 
 # validate data
@@ -84,6 +86,12 @@ Leaderboard rows were produced with a dual-channel harness (agent on an OpenAI-c
 
 Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.07982.
 
+## 7. Known limitations (modeling boundaries)
+
+- **Subject authorization is a policy-compliance test surface, same as upstream**: agent-side tools accept an arbitrary `student_id` (the upstream retail domain behaves identically); campus goes one step further on the student side with `bind_student` initialization binding and upload ownership checks ("records not belonging to you", policy art. 4). An audit-log / authorization-violation dimension is listed as future work.
+- **Not modeled**: cross-college approval routing, status propagation after a leave of absence, the major-change workflow, scholarship ranking tables (rank-based eligibility is not tool-verifiable), and statutory public holidays (the latter will be handled together with policy v1.4).
+- **Certificate / medical field notes**: the certificate progress query (`get_service_requests`) returns `deadline_at` and a detail string but not `ready_at` or proxy-authorization remaining validity (the apply response does carry `ready_at`); `hospital_level` accepts only the canonical values `三甲` / `校医院指定门诊` — variant spellings are not normalized.
+
 ---
 ---
 
@@ -108,11 +116,13 @@ Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.0798
 
 （六条协议声明 + 确定性子串匹配判分声明同上英文版 §4；要点：communicate 判分对逐字改写敏感，母体约 60% MISS 属字面工程噪声。）
 
+env_assertions 契约说明：50 题 reward_basis 均为 [DB, COMMUNICATE]（上游默认）；25 题的 53 条 env_assertions 为诊断性输出（见 RewardInfo.env_assertions），不计入 reward 判分，与官方 v1.0.1 文档契约一致。
+
 ## 5. 复现
 
 ```sh
 uv sync
-uv run pytest tests/test_domains/test_campus        # 49 项测试
+uv run pytest tests/test_domains/test_campus        # 109 项测试
 uv run tau2 check-data                              # 数据校验
 uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek-flash \
   --num-trials 4 --task-split-name base
@@ -121,3 +131,9 @@ uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek
 ## 6. 引用格式
 
 见上方英文版 §6（BibTeX）；同时请引用 τ²-bench 本体（arXiv:2506.07982）。
+
+## 7. 已知限制（建模边界）
+
+- **主体授权＝政策遵从测试面，与上游同构**：agent 侧工具接受任意 `student_id`（上游 retail 同构行为）；campus 的差异化在学生端——`bind_student` 初始化绑定 + 上传属主校验（"记录不属于本人"，政策第 4 条）。audit-log / 越权维度列为 future work。
+- **未建模清单**：跨学院审批流转、休学后的状态传播、转专业工作流、奖学金排名表（排名类资格不经工具校验）、法定节假日（最后者将随政策 v1.4 处理）。
+- **证书 / 医院字段说明**：证书进度查询不返回 `ready_at` 与代领授权余期（申请响应含 `ready_at`）；`hospital_level` 仅收 `三甲` / `校医院指定门诊` canonical 值，变体写法不归一。

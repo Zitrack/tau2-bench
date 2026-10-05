@@ -515,6 +515,8 @@ class TicketRow(BaseModelNoExtra):
     handler: Optional[str] = None
     resolution: Optional[str] = None
     parent_ticket_id: Optional[str] = Field(None, description="level=教务处 必填（第34条逐级）")
+    target_grade_id: Optional[str] = Field(
+        None, description="M1-A2（第16条 P1-3）：申诉+成绩指定的目标成绩行 GR-，判 5 工作日窗用；None＝未指定（维持原 any() 判窗）")
 
 
 class TodoRow(BaseModelNoExtra):
