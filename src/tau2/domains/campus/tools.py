@@ -50,6 +50,7 @@ from tau2.domains.campus.data_model import (
     TodoRow,
     TodoStatus,
     TodoType,
+    UploadDocType,
 )
 from tau2.domains.campus.user_data_model import UserDB
 from tau2.environment.toolkit import ToolKitBase, ToolType, is_tool
@@ -574,16 +575,16 @@ class CampusTools(ToolKitBase):
     def _settle_deferrals(self, now: datetime) -> None:
         for df in list(self.db.deferral_requests.values()):
             if df.status == DeferralStatus.SUBMITTED.value:
-                # §6：材料有效＋签署齐＋额度时限内＝通过；任一缺＝驳回并给出 reject_reason
+                # §6：材料齐（因病＝诊断证明+病假条双件，第12条/M2-B1）＋签署齐＋额度时限内＝通过；
+                # 任一缺＝驳回并给出 reject_reason
                 if df.reason_type == DeferralReasonType.ILLNESS.value:
                     uploads = [
                         self.user_db.uploads[u] for u in df.proof_upload_ids if u in self.user_db.uploads
                     ]
                     invalid = any(u.status == "无效材料" for u in uploads)
-                    valid = any(
-                        u.status in ("已上传", "已核验") and df.hospital_level in VALID_MEDICAL_LEVELS
-                        for u in uploads
-                    )
+                    required = {UploadDocType.MEDICAL_DIAGNOSIS.value, UploadDocType.SICK_LEAVE.value}
+                    valid_docs = {u.doc_type for u in uploads if u.status in ("已上传", "已核验")}
+                    valid = required.issubset(valid_docs) and df.hospital_level in VALID_MEDICAL_LEVELS
                     if invalid:
                         df.status = DeferralStatus.REJECTED.value
                         df.reject_reason = "证明材料无效：其他医疗机构或私人诊所出具的证明视为无效材料（第12条），直接驳回。"
@@ -752,6 +753,15 @@ class CampusTools(ToolKitBase):
         if off is not None:
             self._promote_next_waitlist(off.offering_id)
 
+    def _recount_enrolled(self, offering_id: str) -> None:
+        """权威重算 enrolled_count（M2-B0/R11 裁定）：以该开课 status=已选 行数为唯一
+        口径（data_model.py:391 契约，特别通道审核中行不计入），替代结算分支手工 ±1——
+        种子构造与结算分支的三方约定由此自洽（幂等）。"""
+        off = self.db.course_offerings[offering_id]
+        off.enrolled_count = sum(1 for e in self.db.enrollments.values()
+                                 if e.offering_id == offering_id
+                                 and e.status == EnrollmentStatus.ENROLLED.value)
+
     def _settle_special_channel(self) -> None:
         """§5 链3/第9条：毕业班特别通道——学生签署确认后环境按双重程序规则化判定。
         可替代性规则：该课程本学期另有开放且有余量的其它开课＝驳回（有替代安排），
@@ -779,13 +789,15 @@ class CampusTools(ToolKitBase):
                 if alternative:
                     en.status = EnrollmentStatus.ENROLLED
                     self._expire_open_signatures("enrollments", en.enrollment_id)
+                    if off is not None:
+                        self._recount_enrolled(off.offering_id)
                     continue
                 en.status = EnrollmentStatus.DROPPED
                 en.dropped_at = self._server_time()
                 en.drop_channel = DropChannel.SPECIAL
                 if off is not None:
-                    off.enrolled_count = max(0, off.enrolled_count - 1)
-                    if off.status == OfferingStatus.FULL.value:
+                    self._recount_enrolled(off.offering_id)
+                    if off.status == OfferingStatus.FULL.value and off.enrolled_count < off.capacity:
                         off.status = OfferingStatus.OPEN
                 self._promote_next_waitlist(en.offering_id)
                 for todo in self.user_db.app_todos.values():
@@ -795,6 +807,8 @@ class CampusTools(ToolKitBase):
             elif sig.status in (SigStatus.REJECTED, SigStatus.EXPIRED):
                 en.status = EnrollmentStatus.ENROLLED
                 en.promote_sig_id = None
+                if off is not None:
+                    self._recount_enrolled(off.offering_id)
 
     def _special_sig_for(self, en: EnrollmentRow) -> Optional[SignatureRow]:
         for sig in self.user_db.pending_signatures.values():
@@ -1204,6 +1218,11 @@ class CampusTools(ToolKitBase):
             )
         # 窗口外：第9条 毕业班特别通道
         if s.is_graduating_cohort:
+            # M2-B2/P1-4：第9条提交窗——补退选窗口关闭后 10 个工作日内，超窗拒收
+            window_end = day_end(nth_workday_after_date(parse_time(off.adddrop_deadline), 10))
+            if self.now > window_end:
+                raise ValueError(f"特别退改申请须于补退选窗口关闭后 10 个工作日内提交"
+                                 f"（第9条，截止 {fmt_time(window_end)} 前）；已超窗，无法办理。")
             sig_id = self._make_sig(
                 student_id, SigDocType.SPECIAL_CHANNEL, "enrollments", enrollment_id,
                 summary=f"《{course_name}》毕业班特别通道审批单（学院→教务处双重程序，第9条）",

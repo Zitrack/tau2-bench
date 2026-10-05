@@ -22,9 +22,13 @@ M1 baseline (2026-10-05): gold-action exceptions 0/50; invariants ①③④ pass
 50/50; invariant ② was red on 4 task/offering pairs (count bookkeeping drift
 in task data / settle special-channel branches — root causes and remediation
 in 02-plan/handoffs/M1-20261005-A组补洞与披露.md). R11 approved landing this
-file with an explicit KNOWN_COUNT_GAPS exemption table (exactly four pairs;
-the gaps are fixed by M2-B0, after which the table must be emptied — see
-R11-review-record.md §3 and MODIFY-PLAN M2 DoD①).
+file with an explicit KNOWN_COUNT_GAPS exemption table (exactly four pairs).
+
+M2-B0 (2026-10-05): all four gaps fixed (authoritative `_recount_enrolled`
+in the special-channel settle branches + M03 initial-state count override),
+so the exemption table was emptied and invariant ② now applies to every
+task/offering without exception (R11-review-record.md §3, MODIFY-PLAN M2
+DoD①).
 """
 
 import pytest
@@ -40,18 +44,6 @@ MAIN_TABLES = (
     "certificates",
     "tickets",
 )
-
-# R11 批准（R11-review-record.md §3）：修前基线已知 enrolled_count 计数缺口，
-# 命中 (task, offering) 的题跳过②中该 offering 的 enrolled_count 一致性断言，
-# 其余 offering 与不变量①③④照常全查。
-# M2-B0 落地后必须清空本表（MODIFY-PLAN M2 DoD①）。
-KNOWN_COUNT_GAPS = {
-    ("M03", "OF-2026SP-603-1"),  # 任务直改退课未同步计数 → M2-B0②修复
-    ("M10", "OF-2026SP-402-1"),  # 特别通道批准分支 -1 欠账（旧代码还含伪递补副作用）→ M2-B0①重算修复
-    ("M14", "OF-2026SP-402-1"),  # 回退分支不加计数 → 同上
-    ("H12", "OF-2026SP-402-1"),  # 同 M14
-}
-
 
 def _replay(task):
     """Fresh env → task initial state → gold actions (exceptions propagate)."""
@@ -69,7 +61,7 @@ def _replay(task):
     return env
 
 
-def _invariant_violations(env, task_id):
+def _invariant_violations(env):
     db, user_db = env.tools.db, env.tools.user_db
     tables = {name: getattr(db, name) for name in MAIN_TABLES}
     problems = []
@@ -93,8 +85,7 @@ def _invariant_violations(env, task_id):
                 f"negative count {off.offering_id}: "
                 f"enrolled={off.enrolled_count} waitlist={off.waitlist_count}"
             )
-        exempt = (task_id, off.offering_id) in KNOWN_COUNT_GAPS
-        if off.enrolled_count != enrolled and not exempt:
+        if off.enrolled_count != enrolled:
             problems.append(
                 f"enrolled_count {off.offering_id}: count={off.enrolled_count} rows(已选)={enrolled}"
             )
@@ -123,5 +114,5 @@ def test_gold_replay_all(task_id):
     assert env.get_db_hash() == env2.get_db_hash(), f"{task_id}: agent DB hash not deterministic"
     assert env.get_user_db_hash() == env2.get_user_db_hash(), f"{task_id}: user DB hash not deterministic"
 
-    problems = _invariant_violations(env, task_id)
+    problems = _invariant_violations(env)
     assert not problems, f"{task_id}: terminal-state invariants violated: {problems}"

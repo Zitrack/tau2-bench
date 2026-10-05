@@ -157,23 +157,40 @@ class TestDeferralChain:
         assert "无效材料" in df.reject_reason
 
     def test_illness_valid_material_approve(self, env):
+        """M2-B1（P1-1）：因病缓考须诊断证明+病假条双材料齐（第12条）方可通过；
+        顺序对齐 M05 合规样板：submit→confirm→上传两份→settle→通过。"""
         t, u = env.tools, env.user_tools
         r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
         u.bind_student("S20230103")
         u.confirm_action(r.sig_id)
         up = u.upload_material("deferral_requests", r.request_id, "诊断证明", "市一院.pdf", "三甲")
+        up2 = u.upload_material("deferral_requests", r.request_id, "病假条", "病假条.pdf", "三甲")
         assert t.db.deferral_requests[r.request_id].status == "已提交待审"
         env.sync_tools()
         assert t.db.deferral_requests[r.request_id].status == "通过"
         assert t.user_db.uploads[up.upload_id].status == "已核验"
+        assert t.user_db.uploads[up2.upload_id].status == "已核验"
+
+    def test_illness_single_material_stays_pending(self, env):
+        """M2-B1（P1-1 核心断言）：仅有诊断证明一份（缺病假条）不满足第12条
+        '诊断证明及病假建议'双材料必齐 → 结算留'待材料'，不得放行。"""
+        t, u = env.tools, env.user_tools
+        r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
+        u.bind_student("S20230103")
+        u.confirm_action(r.sig_id)
+        u.upload_material("deferral_requests", r.request_id, "诊断证明", "市一院.pdf", "三甲")
+        env.sync_tools()
+        assert t.db.deferral_requests[r.request_id].status == "待材料"
 
     def test_upload_before_sign_completes_upload_todo(self, env):
         """D-S3A-3：签署前上传有效材料，材料上传待办即完成，业务行仍待签署。
-        M1-A3 适配：场景从 504/EX-0050（该生无选课行，绑定守卫后非法）改为本人已选的 203/EX-0049，断言不变。"""
+        M1-A3 适配：场景从 504/EX-0050（该生无选课行，绑定守卫后非法）改为本人已选的 203/EX-0049，断言不变。
+        M2-B1 适配：签署前传齐诊断证明+病假条两份（单份结算留待材料），断言不变。"""
         t, u = env.tools, env.user_tools
         r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
         u.bind_student("S20230103")
         up = u.upload_material("deferral_requests", r.request_id, "诊断证明", "诊断证明.pdf", "三甲")
+        u.upload_material("deferral_requests", r.request_id, "病假条", "病假条.pdf", "三甲")
         df = t.db.deferral_requests[r.request_id]
         assert df.status == "待签署"
         todo = next(v for v in t.user_db.app_todos.values()
@@ -314,6 +331,9 @@ class TestWaitlistAndSpecialChannel:
 
     def test_special_channel_confirm_approve(self, env):
         t, u = env.tools, env.user_tools
+        # M2-B2 适配：第9条 10 工作日提交窗（03-15 关，窗至 03-27 23:59）——
+        # 原 06-12 锚点已超窗会按新规拒收，链路测试改在窗内时点执行
+        set_now(env, "2026-03-20 10:00")
         # S20220101 唯一开课 805 → 无替代 → 双重程序通过
         en = next(e for e in t.db.enrollments.values()
                   if e.student_id == "S20220101" and e.offering_id == "OF-2026SP-805-1" and e.status == "已选")
@@ -327,6 +347,8 @@ class TestWaitlistAndSpecialChannel:
 
     def test_special_channel_reject_when_alternative(self, env):
         t, u = env.tools, env.user_tools
+        # M2-B2 适配：提交窗内时点（03-20，第9条 10 工作日窗至 03-27）
+        set_now(env, "2026-03-20 10:00")
         # 造替代开课：CRS-805 另一门 2026SP 开放有余位
         from tau2.domains.campus.data_model import OfferingRow
         src = t.db.course_offerings["OF-2026SP-805-1"]
@@ -343,12 +365,40 @@ class TestWaitlistAndSpecialChannel:
 
     def test_special_channel_student_rejects(self, env):
         t, u = env.tools, env.user_tools
+        # M2-B2 适配：提交窗内时点（03-20，第9条 10 工作日窗至 03-27）
+        set_now(env, "2026-03-20 10:00")
         en = next(e for e in t.db.enrollments.values()
                   if e.student_id == "S20220101" and e.offering_id == "OF-2026SP-805-1" and e.status == "已选")
         r = t.drop_course("S20220101", en.enrollment_id)
         u.bind_student("S20220101")
         u.reject_suggestion(r.special_sig_id, reason="再想想")
         assert t.db.enrollments[en.enrollment_id].status == "已选"
+
+    def test_special_channel_within_10_workday_window(self, env):
+        """M2-B2 正向（P1-4，H06 场景）：补退选窗口 03-15 关闭，第 10 个工作日 03-27 23:59
+        前（本例 03-20）发起特别通道成功，全链至已退课。"""
+        set_now(env, "2026-03-20 10:00")
+        r = env.tools.drop_course("S20220101", "EN-0011")
+        assert r.status == "特别通道审核中"
+        assert r.special_sig_id  # 审批单已建（种子 max+1=SIG-017，不带 deadline）
+        env.user_tools.bind_student("S20220101")
+        env.user_tools.confirm_action(r.special_sig_id)
+        env.sync_tools()
+        row = env.tools.db.enrollments["EN-0011"]
+        assert row.status == "已退课" and row.drop_channel == "特别通道"
+        assert env.tools.db.course_offerings["OF-2026SP-301-1"].enrolled_count == 7  # 8→7 权威重算
+
+    def test_special_channel_reject_after_10_workday_window(self, env):
+        """M2-B2 负向（P1-4）：窗口关闭超 10 个工作日（03-27 23:59 之后）→ 第9条拒收，
+        零写（EN 保持已选、不建 SIG）。"""
+        set_now(env, "2026-03-30 10:00")
+        with pytest.raises(ValueError,
+                            match="10 个工作日内提交（第9条，截止 2026-03-27 23:59 前）；已超窗"):
+            env.tools.drop_course("S20220101", "EN-0011")
+        row = env.tools.db.enrollments["EN-0011"]
+        assert row.status == "已选"
+        assert not any(s.doc_type == "特别通道审批单" and s.ref_id == "EN-0011"
+                       for s in env.tools.user_db.pending_signatures.values())
 
 
 class TestDualControlBoundary:
