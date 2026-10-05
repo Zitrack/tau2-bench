@@ -10,9 +10,13 @@ Data targets are hardcoded against contract db.json seed (baseline ea7ec13);
 regenerating seeds must keep these anchors or update this file in the same commit.
 """
 
+import itertools
+from datetime import timedelta
+
 import pytest
 
 from tau2.domains.campus.environment import get_environment
+from tau2.domains.campus.tools import fmt_time, parse_time
 
 
 @pytest.fixture
@@ -535,3 +539,295 @@ class TestM1ConsistencyGuards:
     def test_cert_copy_count_lower_bound(self, env):
         with pytest.raises(ValueError, match="开具份数至少为 1 份（政策第32条）"):
             env.tools.request_certificate("S20230103", "在读证明", copy_count=0)
+
+
+# ------------------------------------------------------------------ M4 加固（campus v1.1-hardening）
+
+class TestPreSettle:
+    """M4-D1 pre-settle（先结算后变更）：时钟推进后首次经 use_tool 分发的调用
+    （连只读）即触发结算。现役冻结时间下 pre-settle 为 no-op——由 A1 逐题哈希
+    与 a8ae237 基线逐位一致另行证明（M4 handoff）。"""
+
+    def test_agent_use_tool_pre_settle(self, env):
+        set_now(env, "2026-06-12 19:00")  # SIG-015（18:00）已过，未手动 sync
+        env.make_tool_call(tool_name="get_student_details", requestor="assistant",
+                           student_id="S20230104")
+        assert env.tools.user_db.pending_signatures["SIG-015"].status == "已过期"
+        assert env.tools.db.enrollments["EN-0070"].status == "失效"
+        assert env.tools.db.students["S20230104"].waitlist_abandon_count == 1
+
+    def test_user_use_tool_pre_settle(self, env):
+        env.user_tools.bind_student("S20230104")
+        set_now(env, "2026-06-12 19:00")
+        env.make_tool_call(tool_name="check_student_app", requestor="user")
+        assert env.tools.user_db.pending_signatures["SIG-015"].status == "已过期"
+        assert env.tools.db.enrollments["EN-0070"].status == "失效"
+
+
+# M4-D1 回归矩阵路由表：6 路写动作 × {deadline−1min 成功 / deadline 当刻成功 /
+# deadline+1min 拒绝}。边界语义写死：`now > deadline_at` 才拒（政策第2条 23:59
+# 截止＝deadline 当刻含边界内）。种子截止均取自 db/user_db 实测值；全部时点落在
+# 非维护窗（周日23:00–周一06:00）与非结账窗内。
+MATRIX_ROUTES = {
+    # agent submit_deferral：EX-0049（2026-06-26 09:00）冲突缓考 → 考前一日23:59
+    "agent_submit_deferral": {
+        "deadline": "2026-06-25 23:59",
+        "bind": None,
+        "call": {"tool_name": "submit_deferral", "requestor": "assistant",
+                 "student_id": "S20230103", "offering_id": "OF-2026SP-203-1",
+                 "exam_id": "EX-0049", "reason_type": "冲突", "filing_type": "考前正常"},
+        "reject": "该场考试已过补办时限",
+        "ok": lambda r: r.status == "待签署" and r.deadline_at == "2026-06-25 23:59",
+    },
+    # user confirm：种子 DF-006/SIG-013（待签署，截止 6-23 23:59）
+    "user_confirm_deferral": {
+        "deadline": "2026-06-23 23:59",
+        "bind": "S20250403",
+        "call": {"tool_name": "confirm_action", "requestor": "user", "sig_id": "SIG-013"},
+        "reject": "该单据确认已于 2026-06-23 23:59 截止",
+        "ok": lambda r: r.business_status == "已提交待审",
+    },
+    # user upload：DF-006 业务行 deadline_at（第12条）；拒绝须零写（不落 UP 行）
+    "user_upload": {
+        "deadline": "2026-06-23 23:59",
+        "bind": "S20250403",
+        "call": {"tool_name": "upload_material", "requestor": "user",
+                 "ref_type": "deferral_requests", "ref_id": "DF-006",
+                 "doc_type": "诊断证明", "file_name": "诊断证明.pdf",
+                 "hospital_level": "三甲"},
+        "reject": "该申请的材料提交已于 2026-06-23 23:59 截止（第12条）",
+        "ok": lambda r: r.upload_id.startswith("UP-"),
+        "zero_write": "uploads",
+    },
+    # waitlist confirm：种子 SIG-015（EN-0070 24h 递补确认，截止 6-12 18:00）
+    "user_confirm_waitlist": {
+        "deadline": "2026-06-12 18:00",
+        "bind": "S20230104",
+        "call": {"tool_name": "confirm_action", "requestor": "user", "sig_id": "SIG-015"},
+        "reject": "该单据确认已于 2026-06-12 18:00 截止",
+        "ok": lambda r: r.business_status == "已选",
+    },
+    # special-channel confirm：种子 SIG-016（EN-0014；drop_course 新单不带
+    # deadline 不适用守卫，种子历史单据带 6-20 23:59 → 守卫一致生效）
+    "user_confirm_special_channel": {
+        "deadline": "2026-06-20 23:59",
+        "bind": "S20220101",
+        "call": {"tool_name": "confirm_action", "requestor": "user", "sig_id": "SIG-016"},
+        "reject": "该单据确认已于 2026-06-20 23:59 截止",
+        "ok": lambda r: r.business_status == "已送审",
+    },
+    # award confirm：种子 SIG-004（APP-004，截止 6-20 23:59）
+    "user_confirm_award": {
+        "deadline": "2026-06-20 23:59",
+        "bind": "S20240202",
+        "call": {"tool_name": "confirm_action", "requestor": "user", "sig_id": "SIG-004"},
+        "reject": "该单据确认已于 2026-06-20 23:59 截止",
+        "ok": lambda r: r.business_status == "待学院审",
+    },
+}
+
+
+class TestDeadlineGuardMatrix:
+    """M4-D1 回归矩阵：6 路 × 3 时点（deadline−1min / 当刻 / +1min）＝18 例。
+    动作一律走 env.make_tool_call（真实分发路径，含 pre-settle），时钟 set_now
+    精确控制；成功侧断言业务返回值，拒绝侧断言守卫文案（+upload 路零写）。"""
+
+    @pytest.mark.parametrize("offset", [-1, 0, 1], ids=["t-1min", "t-0", "t+1min"])
+    @pytest.mark.parametrize("route", sorted(MATRIX_ROUTES))
+    def test_matrix(self, env, route, offset):
+        spec = MATRIX_ROUTES[route]
+        if spec["bind"]:
+            env.user_tools.bind_student(spec["bind"])
+        set_now(env, fmt_time(parse_time(spec["deadline"]) + timedelta(minutes=offset)))
+        uploads_before = len(env.user_tools.db.uploads)
+        if offset <= 0:
+            result = env.make_tool_call(**spec["call"])
+            assert spec["ok"](result), f"{route}@{offset}: unexpected result {result}"
+        else:
+            with pytest.raises(ValueError, match=spec["reject"]):
+                env.make_tool_call(**spec["call"])
+            if spec.get("zero_write") == "uploads":
+                assert len(env.user_tools.db.uploads) == uploads_before  # 守卫前置零写
+
+    def test_reject_overdue_covered_by_status_check(self, env):
+        """M4-D1 决策 D-M4-2：reject_suggestion 不设独立 deadline 判断——
+        pre-settle 先置"已过期"，status!=PENDING 检查即覆盖逾期拒签
+        （专用文案"不可拒签"），以实现最简。"""
+        env.user_tools.bind_student("S20230104")
+        set_now(env, "2026-06-12 19:00")  # SIG-015（18:00）已过
+        with pytest.raises(ValueError, match="已过期.*不可拒签"):
+            env.make_tool_call(tool_name="reject_suggestion", requestor="user",
+                               sig_id="SIG-015")
+
+
+class TestM4Hardening:
+    """M4 D2/D3：特别通道卡死侧终态迁移 + 候补位次单调（分支隔离加固）。"""
+
+    def test_special_channel_confirmed_past_deadline_migrates(self, env):
+        """M4-D2 构造性测试（R10 P1-2/R11 裁定）：种子带 deadline 的特别单
+        （SIG-016=2026-06-20 23:59）confirm 后推时间过 deadline → settle 终态
+        迁移：EN-0014 回'已选'（计数 _recount_enrolled 权威重算）+ SIG 置
+        '已过期'（acted_at 保留确认时刻）。confirm 走直接方法调用以保留
+        "确认后、结算前"的格子——现役分发路径下 confirm 后即时结算，
+        该格不可达（D1 守卫前置），按终态完备性必须存在。"""
+        t, u = env.tools, env.user_tools
+        set_now(env, "2026-06-19 10:00")
+        u.bind_student("S20220101")
+        c = u.confirm_action("SIG-016")  # 直接调用：不经 use_tool，暂不结算
+        assert c.business_status == "已送审"
+        assert t.db.enrollments["EN-0014"].status == "特别通道审核中"
+        set_now(env, "2026-06-21 00:00")  # 推时间过 deadline（周日 00:00 非维护窗）
+        env.sync_tools()                   # → 终态迁移
+        en = t.db.enrollments["EN-0014"]
+        sig = t.user_db.pending_signatures["SIG-016"]
+        assert en.status == "已选" and en.promote_sig_id is None
+        assert sig.status == "已过期"
+        assert sig.acted_at == "2026-06-19 10:00"  # acted_at 保留学生确认时刻
+        off = t.db.course_offerings["OF-2026SP-402-1"]
+        rows = sum(1 for e in t.db.enrollments.values()
+                   if e.offering_id == "OF-2026SP-402-1" and e.status == "已选")
+        assert off.enrolled_count == rows == 5  # EN-0014 计入后权威重算
+
+    def test_waitlist_position_monotonic_after_abandon_rejoin(self, env):
+        """M4-D3：A（EN-0070 位次1）放弃后 C 重入——位次=活跃候补最大位次+1：
+        C 得 3（与存活 B=EN-0159 的 2 不重复、排在 B 之后）；旧公式
+        waitlist_count+1 会复用位次 2 造成重复，本测试即其回归屏障。"""
+        t, u = env.tools, env.user_tools
+        set_now(env, "2026-03-04 10:00")  # 候补 48h 截止（03-13 23:59）前
+        u.bind_student("S20230104")
+        u.reject_suggestion("SIG-015", reason="已选别的课")  # A=EN-0070（位次1）放弃
+        r = t.join_waitlist("S20230103", "OF-2026SP-402-1")  # C 重入
+        assert r.waitlist_position == 3
+        active = {e.enrollment_id: e.waitlist_position
+                  for e in t.db.enrollments.values()
+                  if e.offering_id == "OF-2026SP-402-1" and e.status == "候补中"}
+        assert active == {"EN-0159": 2, r.enrollment_id: 3}  # B 保持 2、C=3：无重复
+        assert active[r.enrollment_id] > active["EN-0159"]   # C 在 B 之后（顺位正确）
+        assert t.db.course_offerings["OF-2026SP-402-1"].waitlist_count == 2
+
+
+def _m4_step_join(env):
+    env.make_tool_call(tool_name="join_waitlist", requestor="assistant",
+                       student_id="S20230103", offering_id="OF-2026SP-402-1")
+
+
+def _m4_step_abandon(env):
+    env.user_tools.bind_student("S20230104")
+    env.make_tool_call(tool_name="reject_suggestion", requestor="user", sig_id="SIG-015")
+
+
+def _m4_step_confirm(env):
+    env.user_tools.bind_student("S20230104")
+    env.make_tool_call(tool_name="confirm_action", requestor="user", sig_id="SIG-015")
+
+
+def _m4_step_drop(env):
+    env.make_tool_call(tool_name="drop_course", requestor="assistant",
+                       student_id="S20230101", enrollment_id="EN-0027", reason="D4")
+
+
+def _m4_step_expire(env):
+    set_now(env, "2026-06-12 19:00")  # SIG-015（18:00）过期链
+    env.sync_tools()
+
+
+def _m4_drop(student_id, enrollment_id):
+    def _call(env):
+        env.make_tool_call(tool_name="drop_course", requestor="assistant",
+                           student_id=student_id, enrollment_id=enrollment_id,
+                           reason="D4")
+    return _call
+
+
+def _m4_step_expire_lvl2(env):
+    # C 的递补单截止 = expire_lvl1 时刻（06-12 19:00）+24h = 06-13 19:00
+    set_now(env, "2026-06-13 20:00")
+    env.sync_tools()
+
+
+# D4① 确定性穷举的定向步进空间（5 步 → 全部一/二步序列 5+25=30 条路径）
+M4_STEPS = [
+    ("join_C", _m4_step_join),
+    ("abandon_A", _m4_step_abandon),
+    ("confirm_A", _m4_step_confirm),
+    ("drop_EN0027", _m4_step_drop),
+    ("expire_promote", _m4_step_expire),
+]
+
+# D4② 定向下探序列：候补计数 2→0、开课计数 4→0，逐骤断言无负数（时钟单调）
+M4_COUNTDOWN = [
+    ("abandon_A", _m4_step_abandon),                     # 候补 2→1（A 弃）
+    ("rejoin_C", _m4_step_join),                         # 位次 3，候补 1→2
+    ("drop_EN-0027", _m4_drop("S20230101", "EN-0027")),   # 计数 4→3，EN-0159 收递补单
+    ("drop_EN-0041", _m4_drop("S20230102", "EN-0041")),   # 3→2（队列守卫不抢跑）
+    ("drop_EN-0242", _m4_drop("S20240202", "EN-0242")),   # 2→1
+    ("drop_EN-0305", _m4_drop("S20230302", "EN-0305")),   # 1→0
+    ("expire_lvl1", _m4_step_expire),                     # EN-0159 弃 2→1；C 收递补单
+    ("expire_lvl2", _m4_step_expire_lvl2),                # C 弃 1→0
+]
+
+
+class TestD4Invariants:
+    """M4-D4 不变量测试：不引新依赖（无 hypothesis），确定性穷举定向构造小空间。
+    判据沿用 A1：③活跃候补位次唯一；②各 offering 计数==行数且无负数。"""
+
+    @staticmethod
+    def _count_problems(env):
+        db = env.tools.db
+        problems = []
+        for off in db.course_offerings.values():
+            rows = [e for e in db.enrollments.values() if e.offering_id == off.offering_id]
+            enrolled = sum(1 for e in rows if e.status == "已选")
+            waitlisted = sum(1 for e in rows if e.status == "候补中")
+            if off.enrolled_count < 0 or off.waitlist_count < 0:
+                problems.append(f"negative {off.offering_id}: enrolled={off.enrolled_count} "
+                                f"waitlist={off.waitlist_count}")
+            if off.enrolled_count != enrolled:
+                problems.append(f"enrolled_count {off.offering_id}: {off.enrolled_count} != rows {enrolled}")
+            if off.waitlist_count != waitlisted:
+                problems.append(f"waitlist_count {off.offering_id}: {off.waitlist_count} != rows {waitlisted}")
+        return problems
+
+    @staticmethod
+    def _position_problems(env):
+        db = env.tools.db
+        problems = []
+        for off in db.course_offerings.values():
+            positions = [e.waitlist_position for e in db.enrollments.values()
+                         if e.offering_id == off.offering_id and e.status == "候补中"]
+            if len(positions) != len(set(positions)):
+                problems.append(f"duplicate positions {off.offering_id}: {positions}")
+        return problems
+
+    def test_positions_unique_over_exhaustive_constructions(self):
+        """D4①：5 个定向步进的全部一/二步序列（5+25=30 条确定性穷举路径），
+        每步后断言活跃候补位次唯一（A1③ 判据）。守卫拒绝（ValueError）＝零写
+        （D1 守卫前置），状态不变，不变量仍须成立。"""
+        for length in (1, 2):
+            for seq in itertools.product(M4_STEPS, repeat=length):
+                env = get_environment()
+                set_now(env, "2026-03-04 10:00")  # 窗口内锚点（48h 截止 03-13 23:59）
+                names = []
+                for name, step in seq:
+                    names.append(name)
+                    try:
+                        step(env)
+                    except ValueError:
+                        pass  # 守卫拒绝＝零写，状态不变
+                    problems = self._position_problems(env)
+                    assert not problems, f"steps={'→'.join(names)}: {problems}"
+
+    def test_counts_never_negative_over_constructions(self):
+        """D4②：定向序列把计数下探到底（放弃→重入→连退 4 人至 0→两级过期链
+        候补清零），每步后断言各 offering 计数==行数且无负数（A1② 口径）。"""
+        env = get_environment()
+        set_now(env, "2026-03-04 10:00")
+        names = []
+        for name, step in M4_COUNTDOWN:
+            step(env)
+            names.append(name)
+            problems = self._count_problems(env)
+            assert not problems, f"steps={'→'.join(names)}: {problems}"
+        # 终态：开课计数与候补计数都已下探到 0，从未为负
+        off = env.tools.db.course_offerings["OF-2026SP-402-1"]
+        assert off.enrolled_count == 0 and off.waitlist_count == 0

@@ -411,9 +411,19 @@ class CampusTools(ToolKitBase):
         self.user_db = user_db if user_db is not None else UserDB()
 
     def use_tool(self, tool_name: str, **kwargs):
-        """执行后统一结算（T9）：评测金标重放走 make_tool_call→use_tool 且不额外调
-        sync_tools（evaluator_env 循环），故结算必须挂在工具执行路径上；
-        只读调用同样触发（settle 是状态/时间的纯函数，幂等，多调无害）。"""
+        """先结算后变更（pre-settle，M4-D1）+ 执行后结算（T9）。
+
+        - pre-settle：任何调用（含只读）执行前先把状态机收敛到当前 current_time——
+          "变更永远发生在已结算状态之上"，与 M2-B0 的关系：B0 把计数改为
+          `_recount_enrolled` 权威重算（settle 内执行），pre-settle 保证该重算在
+          每次分支判断/写入前已反映，杜绝基于陈旧计数的判断（TOCTOU 类缺口）。
+        - 执行后 settle（T9 原语义）：评测金标重放走 make_tool_call→use_tool 且不
+          额外调 sync_tools（evaluator_env 循环），故结算必须挂在工具执行路径上。
+        - 只读调用同样触发两侧（settle 是状态/时间的纯函数，幂等，多调无害）。
+        - 现役冻结时间下 pre-settle 恒为 no-op（set_state 末尾与上一次调用的后置
+          settle 已收敛状态，两次调用间 current_time 不变）——由 A1 逐题哈希与
+          a8ae237 基线逐位一致证明（M4 handoff "A1 哈希对照"节）。"""
+        self.settle()
         resp = super().use_tool(tool_name, **kwargs)
         self.settle()
         return resp
@@ -775,6 +785,20 @@ class CampusTools(ToolKitBase):
             off = self.db.course_offerings.get(en.offering_id)
             if sig.status == SigStatus.CONFIRMED:
                 if sig.deadline_at and self.now > parse_time(sig.deadline_at):
+                    # M4-D2 终态迁移（R10 P1-2/R11 裁定）：确认已受理但签署时限已过。
+                    # 原 continue 会让 EN 永久卡在"特别通道审核中"（卡死侧无出口）；
+                    # 现迁移为终态：EN 回'已选'（维持原状，计数走 _recount_enrolled
+                    # 权威重算，与 REJECTED/EXPIRED 回退分支同构）+ SIG 置'已过期'
+                    # （acted_at 保留学生确认时刻，不覆盖）。该分支现役不可达——
+                    # D1 确认守卫前置（过期单据不可再确认，pre-settle 亦先置已过期
+                    # 双保险），drop_course 新建特别单不带 deadline（D-S2A-5）——
+                    # 但按终态完备性必须存在（构造性测试
+                    # test_special_channel_confirmed_past_deadline_migrates 见证）。
+                    en.status = EnrollmentStatus.ENROLLED
+                    en.promote_sig_id = None
+                    if off is not None:
+                        self._recount_enrolled(off.offering_id)
+                    sig.status = SigStatus.EXPIRED
                     continue
                 alternative = False
                 if off is not None:
@@ -1268,7 +1292,17 @@ class CampusTools(ToolKitBase):
             if e.student_id == student_id and e.offering_id == offering_id and e.status in (
                     EnrollmentStatus.ENROLLED.value, EnrollmentStatus.WAITLISTED.value):
                 raise ValueError(f"《{course_name}》已有选课/候补记录（状态：{_s(e.status)}）。")
-        pos = off.waitlist_count + 1
+        # M4-D3 位次单调（第8条队列顺位）：取该开课活跃候补行的最大位次+1——
+        # 旧公式 waitlist_count+1 在前位放弃（计数-1）后重入会复用已占位次
+        # （如 A=1/B=2，A 弃后 C 得 2 与 B 撞号）；max+1 保证位次只增不重复，
+        # 且 C 恒排在存活的 B 之后（顺位正确）。空队列 default=0 → 首位 1。
+        active_positions = [
+            e.waitlist_position for e in self.db.enrollments.values()
+            if e.offering_id == offering_id
+            and e.status == EnrollmentStatus.WAITLISTED.value
+            and e.waitlist_position is not None
+        ]
+        pos = max(active_positions, default=0) + 1
         en_id = next_table_id(self.db.enrollments, "enrollment_id", "EN", 4)
         self.db.enrollments[en_id] = EnrollmentRow(
             enrollment_id=en_id, student_id=student_id, offering_id=offering_id, term=off.term,
