@@ -59,6 +59,8 @@ Dataset (tasks / policy / seed DBs): [huggingface.co/datasets/ZitrackHF/tau2-zh-
 
 数据集（任务集 / 政策 / 种子库）开源于 Hugging Face，域实现正通过 [PR #596](https://github.com/sierra-research/tau2-bench/pull/596) 回馈上游。所有机构、人名与记录均为虚构（"青川大学"），政策素材改写自公开法规并脱敏。
 
+> **v1.1.1 补丁（2026-10-05/06）**：一致性整改——因病缓考双材料（第12条二）、特别通道十工作日提交窗＋H06 重锚（第9条）、政策 v1.4、计数权威重算；随后加固（pre-settle / deadline 守卫 / 终态迁移 / 候补位次单调）。H01/H06 两题修复后经 40 sims overlay 对全部 5 行重跑重锚；测试 **141 项**（含 50 题全量金标重放 CI）。变更详情见域 [Changelog](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-changelog) 与 PR Updates（part 1–3）。
+
 ## Repository layout (this fork)
 
 | branch / path | content |
