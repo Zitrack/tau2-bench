@@ -657,6 +657,17 @@ class TestM1ConsistencyGuards:
         rs = t.get_service_requests("S20230103", "certificate")
         assert not next(x for x in rs.requests if x.request_id == r.cert_id).missing
 
+    def test_campus_package_metadata(self):
+        """R16-D-1: runtime-readable benchmark metadata — engine (pyproject, tau2==1.0.1)
+        and campus benchmark versions are intentionally separate axes."""
+        import re
+
+        import tau2.domains.campus as campus
+
+        assert re.fullmatch(r"\d+\.\d+\.\d+", campus.__version__)
+        assert campus.POLICY_VERSION == "1.4"
+        assert campus.SCORING_PROTOCOL == "tau2-v1.0.1-compatible"
+
     def test_deferral_requires_own_enrollment(self, env):
         # S20250401 在读但未选 OF-2026SP-203-1 → 缓考绑定守卫拒绝（第12/10条）
         with pytest.raises(ValueError, match="未找到该课程的在读选课记录，无法申请缓考（政策第12/10条）"):
