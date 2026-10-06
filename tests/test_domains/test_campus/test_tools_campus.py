@@ -665,7 +665,7 @@ class TestM1ConsistencyGuards:
         import tau2.domains.campus as campus
 
         assert re.fullmatch(r"\d+\.\d+\.\d+", campus.__version__)
-        assert campus.POLICY_VERSION == "1.4"
+        assert campus.POLICY_VERSION == "1.4.1"
         assert campus.SCORING_PROTOCOL == "tau2-v1.0.1-compatible"
 
     def test_deferral_requires_own_enrollment(self, env):
