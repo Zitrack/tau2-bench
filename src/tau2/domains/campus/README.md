@@ -146,3 +146,10 @@ uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek
 - **v1.1 (2026-10-05) — consistency fixes (PR #596 updates, part 1/2).** Full gold-replay CI (exceptions-as-failures + terminal-state invariants; countermeasure aligned with upstream issue #499); optional `target_grade_id` appeal binding (art. 16); deferral↔enrollment binding (art. 12/10); illness deferrals restricted to post-exam filing (art. 12); waitlist ACTIVE-status / suspended-offering guards (art. 10/8); `copy_count ≥ 1` (art. 32); authoritative `enrolled_count` recount in special-channel settlement; illness two-document requirement + H01 gold update (art. 12(2)); special-channel 10-workday submission window + H06 re-anchor (art. 9); policy v1.4 (art. 2/13). Scoring-contract note: `env_assertions` are diagnostic outputs and do not gate the reward. Leaderboard re-anchored via a 40-sim overlay rerun (H01/H06, all 5 rows).
 - **v1.0.1 (2026-10-03) — initial release.** Campus domain, 50 tasks (easy 15 / medium 20 / hard 15, incl. 17 refusal tasks), dual-control, policy v1.3, 5-row leaderboard.
 - **证书 / 医院字段说明**：证书进度查询不返回 `ready_at` 与代领授权余期（申请响应含 `ready_at`）；`hospital_level` 仅收 `三甲` / `校医院指定门诊` canonical 值，变体写法不归一。
+
+## 9. 变更记录（中文摘要）
+
+- **v1.1.2（2026-10-06）——评审跟进**：医疗类材料未申报医院等级（空串/"无"）改为"已退回补报"而非"无效材料"；仅声明"其他机构"（或其他非 canonical 声明值）才构成无效驳回（第 12 条原文）；`confirm_action` 按可用材料（非退回）判定"进入待材料"，回执不再误报"已提交待审"。对现役 50 题零影响（金标重放 CI 50/50，141 项测试全绿）。
+- **v1.1.1（2026-10-06）——加固**：所有工具调用前置结算（pre-settle，agent/学生两侧）；用户侧签署确认与材料上传 deadline 守卫（第 8/12 条）；特别通道"已确认但逾期"终态迁移（回退+过期）；候补位次单调（max+1，放弃后不复用位次）。50 题双库哈希逐字节一致证明零现役影响。
+- **v1.1（2026-10-05）——一致性修复（PR #596 Updates part 1/2）**：50 题全量金标重放 CI（异常即失败＋终态不变量，对齐上游 #499）；申诉可选绑定目标成绩（第 16 条）；缓考↔选课绑定（第 12/10 条）；因病限考后补办（第 12 条）；候补在读/停开守卫（第 10/8 条）；开具份数≥1（第 32 条）；特别通道结算计数权威重算；因病双材料＋H01 金标更新（第 12 条二）；特别通道十工作日提交窗＋H06 重锚（第 9 条）；政策 v1.4（第 2/13 条）。判分契约说明：`env_assertions` 为诊断性输出、不计入 reward。榜单经 40 sims overlay 重跑重锚（H01/H06，全部 5 行）。
+- **v1.0.1（2026-10-03）——首次发布**：campus 域、50 题（易 15/中 20/难 15，含 17 道拒绝题）、双控、政策 v1.3、5 行榜单。
