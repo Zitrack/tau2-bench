@@ -10,7 +10,7 @@
 - **Policy**: `data/tau2/domains/campus/policy.md` — a 36-article service regulation for the fictional university, deliberately packed with time-boundary traps (补退选窗口、缓考时限、维护窗口、月末结账、申诉逐级…).
 - **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **17 refusal tasks** (privacy, 越级申诉, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
 - **Data**: `db.json` (14 tables) + `user_db.json` (students act through their own app).
-- **Tests**: `tests/test_domains/test_campus/` — 109 pytest cases (tools, replay, contract, full 50-task gold-replay CI).
+- **Tests**: `tests/test_domains/test_campus/` — 137 pytest cases (tools, replay, contract, full 50-task gold-replay CI, deadline-guard matrix, state-machine invariants).
 
 ## 2. Dual-control design
 
@@ -29,13 +29,15 @@ Pass^1 = share of passing trials (of 200); pass^4 = tasks passing **4/4** (of 50
 
 | # | Model | pass^1 | pass^4 | avg turns | easy / medium / hard |
 |---|---|---|---|---|---|
-| 1 | DeepSeek V4.1-Flash (anchor) | 0.975 | 0.900 | 6.08 | 1.000 / 0.963 / 0.967 |
+| 1 | DeepSeek V4.1-Flash (anchor) | 0.975 | 0.900 | 6.07 | 1.000 / 0.963 / 0.967 |
 | 2 | Qwen3.8-Flash | 0.860 | 0.720 | 5.41 | 0.967 / 0.800 / 0.833 |
-| 3 | GLM-5.3-Flash | 0.780 | 0.680 | 5.13 | 0.783 / 0.813 / 0.733 |
-| 4 | GLM-5.3 | 0.785 | 0.660 | 5.30 | 0.833 / 0.825 / 0.683 |
-| 5 | MiMo-V2.6-Pro | 0.835 | 0.640 | 5.22 | 0.883 / 0.875 / 0.733 |
+| 3 | GLM-5.3 | 0.805 | 0.680 | 5.17 | 0.833 / 0.825 / 0.750 |
+| 4 | GLM-5.3-Flash | 0.790 | 0.680 | 5.12 | 0.783 / 0.813 / 0.767 |
+| 5 | MiMo-V2.6-Pro | 0.855 | 0.660 | 5.19 | 0.883 / 0.875 / 0.800 |
 
-All numbers are recomputed programmatically from `results.json` (never hand-copied). Row 5 as-run includes 1 infrastructure-failed trial (upstream outage): excluding it gives 0.840 / 0.660 — both calibers are documented. Closed-source flagship models were intentionally not run (cost vs. information gain); the anchor row carries the ceiling reference.
+> **v1.1.1 patch (2026-10-05)**: tasks H01 (two-document illness deferrals, art. 12(2)) and H06 (special-channel 10-workday submission window, re-anchored to 2026-03-20) were updated for policy↔code↔gold consistency and re-run on all rows (40-sim overlay; per-row pre-patch values are preserved in `leaderboard-final.json`). Rows 3/4 swap places at equal pass^4 (0.680), decided by pass^1. See §8 Changelog.
+
+All numbers are recomputed programmatically from `results.json` (never hand-copied). Row 5 includes 1 infrastructure-failed trial in the pre-patch as-run (upstream outage): excluding it gives 0.840 / 0.660 pre-patch and 0.860 / 0.680 on the current v1.1.1 overlay — both calibers are documented. Closed-source flagship models were intentionally not run (cost vs. information gain); the anchor row carries the ceiling reference.
 
 ## 4. Protocol & grading declarations
 
@@ -56,7 +58,7 @@ Scoring-contract note: all 50 tasks ship `reward_basis=[DB, COMMUNICATE]` (the u
 # install (Python >=3.12,<3.14)
 uv sync
 
-# domain tests (109 cases)
+# domain tests (137 cases)
 uv run pytest tests/test_domains/test_campus
 
 # validate data
@@ -122,7 +124,7 @@ env_assertions 契约说明：50 题 reward_basis 均为 [DB, COMMUNICATE]（上
 
 ```sh
 uv sync
-uv run pytest tests/test_domains/test_campus        # 109 项测试
+uv run pytest tests/test_domains/test_campus        # 137 项测试
 uv run tau2 check-data                              # 数据校验
 uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek-flash \
   --num-trials 4 --task-split-name base
@@ -135,5 +137,11 @@ uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek
 ## 7. 已知限制（建模边界）
 
 - **主体授权＝政策遵从测试面，与上游同构**：agent 侧工具接受任意 `student_id`（上游 retail 同构行为）；campus 的差异化在学生端——`bind_student` 初始化绑定 + 上传属主校验（"记录不属于本人"，政策第 4 条）。audit-log / 越权维度列为 future work。
-- **未建模清单**：跨学院审批流转、休学后的状态传播、转专业工作流、奖学金排名表（排名类资格不经工具校验）、法定节假日（最后者将随政策 v1.4 处理）。
+- **未建模清单**：跨学院审批流转、休学后的状态传播、转专业工作流、奖学金排名表（排名类资格不经工具校验）。法定节假日已随政策 v1.4 对齐口径（时限计算不引入节假日调整），不再是待建模项。
+
+## 8. Changelog
+
+- **v1.1.1 (2026-10-06) — hardening.** Pre-settle before every tool call (agent & user sides); user-side deadline guards on signature confirmation and material upload (art. 8/12); special-channel stuck-state terminal transition (confirmed-but-overdue → revert + expire); monotonic waitlist positions (max+1, no position reuse after abandonment). Zero live-impact on the published suite proven by the 50-task gold-replay CI (per-task DB/user-DB hashes byte-identical before/after the change).
+- **v1.1 (2026-10-05) — consistency fixes (PR #596 updates, part 1/2).** Full gold-replay CI (exceptions-as-failures + terminal-state invariants; countermeasure aligned with upstream issue #499); optional `target_grade_id` appeal binding (art. 16); deferral↔enrollment binding (art. 12/10); illness deferrals restricted to post-exam filing (art. 12); waitlist ACTIVE-status / suspended-offering guards (art. 10/8); `copy_count ≥ 1` (art. 32); authoritative `enrolled_count` recount in special-channel settlement; illness two-document requirement + H01 gold update (art. 12(2)); special-channel 10-workday submission window + H06 re-anchor (art. 9); policy v1.4 (art. 2/13). Scoring-contract note: `env_assertions` are diagnostic outputs and do not gate the reward. Leaderboard re-anchored via a 40-sim overlay rerun (H01/H06, all 5 rows).
+- **v1.0.1 (2026-10-03) — initial release.** Campus domain, 50 tasks (easy 15 / medium 20 / hard 15, incl. 17 refusal tasks), dual-control, policy v1.3, 5-row leaderboard.
 - **证书 / 医院字段说明**：证书进度查询不返回 `ready_at` 与代领授权余期（申请响应含 `ready_at`）；`hospital_level` 仅收 `三甲` / `校医院指定门诊` canonical 值，变体写法不归一。
