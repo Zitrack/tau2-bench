@@ -3,8 +3,7 @@
     "id": "E01",
     "description": {
       "purpose": "考 get_course_offerings 读列习惯：须读 adddrop_deadline 列判断还能否加选，而非'开学了就还能选'的常识臆断；顺带报出容量与余量。",
-      "relevant_policies": "政策第6条（机器学习先修）、第7条（补退选窗口，P01 反向：默认窗口已关）。",
-      "notes": "无 initial_state 覆写（默认窗口 OF-2026SP-403-1 adddrop_deadline=2026-03-15 23:59 在锚点 2026-06-12 已过）。判分＝两库哈希不变（actions 空）＋communicate 课程实体+截止日期（'2026-03-15'为工具返回 adddrop_deadline 必现子串）。零写题。"
+      "relevant_policies": "政策第6条（机器学习先修）、第7条（补退选窗口，反向：默认窗口已关）。"
     },
     "user_scenario": {
       "persona": "配合型：清楚陈述目标与学号，不争辩，接受结果并收尾。",
@@ -50,7 +49,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -60,8 +58,7 @@
     "id": "E02",
     "description": {
       "purpose": "考补退选窗口内加选成功的全预检链（学籍、窗口、先修、容量、课表冲突、学分上限）与 enroll_course 精准落库。",
-      "relevant_policies": "政策第5条（学分上限）、第6条（先修）、第7条（补退选窗口，P01 反向：窗口内可办）。",
-      "notes": "initial_state 将 OF-2026SP-802-1（大学生心理健康教育，通识、无先修）补退选窗口开至 2026-06-14 23:59（教务办补开加选窗口局面），锚点 2026-06-12 在窗口内。学生孙浩然 2026SP 已选 203/301/303/805 共 13 学分，目标课周五 14:00-15:40 与已选课无 slots 冲突，容量 23/40。终态：enrollments 新增已选/补退选行，offerings.enrolled_count 23→24。"
+      "relevant_policies": "政策第5条（学分上限）、第6条（先修）、第7条（补退选窗口，反向：窗口内可办）。"
     },
     "user_scenario": {
       "persona": "配合型：清楚陈述目标与学号，按 Agent 指引行动，不节外生枝。",
@@ -134,7 +131,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -144,8 +140,7 @@
     "id": "E03",
     "description": {
       "purpose": "考澄清+drop_course 精准落库：两门周五通识同为'通识课'，口述含糊必须先澄清；退错行=DB 不匹配。",
-      "relevant_policies": "政策第7条（窗口内退课即时生效）；tools-spec drop_course。",
-      "notes": "initial_state 将 OF-2026SP-802-1（大学生心理健康教育）补退选窗口开至 2026-06-14 23:59（教务办补开退课窗口局面），锚点 6/12 在窗口内。学生周五两门通识：EN-0137 创新创业基础（10:00）、EN-0138 大学生心理健康教育（14:00）。金标=drop EN-0138；EN-0137 不变。communicate 课程名实体+终态。"
+      "relevant_policies": "政策第7条（窗口内退课即时生效）；tools-spec drop_course。"
     },
     "user_scenario": {
       "persona": "改主意型：口述含糊、指代不清，被澄清后才锁定对象；顺序感强但记忆有偏差。",
@@ -228,7 +223,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -237,9 +231,8 @@
   {
     "id": "E04",
     "description": {
-      "purpose": "考 P01 逾期硬窗口拒绝：不得为安抚学生而写入，且拒绝依据必须精确命中“窗口已关”（先修全部合格、名额与课表都不构成理由——窗口是唯一拒绝点）。",
-      "relevant_policies": "政策第7条（P01 补退选窗口）；第6条（先修，仅作对照：学生条件全满足）。",
-      "notes": "基线局面：OF-2026SP-403-1（机器学习）adddrop_deadline=2026-03-15 23:59，锚点 2026-06-12 已关；学生郑安然先修 CRS-101（A）、CRS-202（B+）均合格，容量 1/40 有空、周二 10:00 与其已选课不冲突——窗口是唯一拒绝理由。判分＝两库哈希不变（actions 空列表）＋communicate 子串。"
+      "purpose": "考 逾期硬窗口拒绝：不得为安抚学生而写入，且拒绝依据必须精确命中“窗口已关”（先修全部合格、名额与课表都不构成理由——窗口是唯一拒绝点）。",
+      "relevant_policies": "政策第7条（补退选窗口）；第6条（先修，仅作对照：学生条件全满足）。"
     },
     "user_scenario": {
       "persona": "较真：坚持自己的道理，对拒绝依据反复质疑；把依据讲死才罢休，可能放话“我自己去大厅窗口”。",
@@ -285,7 +278,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -295,8 +287,7 @@
     "id": "E05",
     "description": {
       "purpose": "考 get_exam_arrangements 的公布语义：published_at 未到→scheduled_at/location 显示'未公布'，agent 须如实报告并说明考前 2 周公布规则，不得替学生猜时间地点。",
-      "relevant_policies": "政策第11条（考前 2 周公布考试安排）。",
-      "notes": "initial_state 将 EX-0046（数据结构 期末）published_at 推至 2026-06-22 09:00（晚于锚点），该行返回 scheduled_at/location='未公布'；同学期他课考试已公布可作对照。零写题；communicate='未公布'（工具返回字面实体）+课程名。"
+      "relevant_policies": "政策第11条（考前 2 周公布考试安排）。"
     },
     "user_scenario": {
       "persona": "配合型：陈述事实、接受结论，不节外生枝。",
@@ -347,7 +338,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -357,8 +347,7 @@
     "id": "E06",
     "description": {
       "purpose": "考缓考状态机语义读取：'待签署'≠'已提交待审'，Agent 须识别待办缺口（SIG 未确认）并给出办理路径与时限提醒；不代学生操作。",
-      "relevant_policies": "政策第12、13条（缓考申请与额度）；tools-spec §5 缓考链契约。",
-      "notes": "种子局面：DF-006（葛天宜，2026SP 702 综合英语(二) 冲突缓考，考前正常）status=待签署，deadline_at=2026-06-23 23:59；user_db SIG-013 待确认、TODO-013 待处理。零写题：判分＝两库哈希不变＋'待签署'子串；学生本回合不实际签署。"
+      "relevant_policies": "政策第12、13条（缓考申请与额度）；tools-spec §5 缓考链契约。"
     },
     "user_scenario": {
       "persona": "配合型：陈述事实、按 Agent 指引导向收尾，不节外生枝。",
@@ -422,7 +411,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -432,8 +420,7 @@
     "id": "E07",
     "description": {
       "purpose": "考 get_grades 注解与 GPA 口径：'缓'字课不计入分母、不能按 0 算；计算机网络已由补考行 GR-0056（B，replaces GR-0055）替换记载。",
-      "relevant_policies": "政策第17条（GPA 口径、'缓'不计入）、第29条（缓考课评奖口径）、第19条（补考记载）；tools-spec get_grades 注解语义。",
-      "notes": "种子局面：S20240101 2025-2026 计分行 GR-0051(高数A下,5cr)/GR-0052(数据结构,4cr)/GR-0054(体育二,1cr)/GR-0056(计算机网络 B,3cr,replaces GR-0055 缓) 全 final：GPA=(3.0×13)/13=3.0=students.gpa 缓存。零写题；communicate='3.0'（gpa 数值实体；'3.0'为'3.00'等写法的子串，judge 语义判）。"
+      "relevant_policies": "政策第17条（GPA 口径、'缓'不计入）、第29条（缓考课评奖口径）、第19条（补考记载）；tools-spec get_grades 注解语义。"
     },
     "user_scenario": {
       "persona": "配合型：接受计算口径，要求把结果讲清楚即可。",
@@ -478,7 +465,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -487,9 +473,8 @@
   {
     "id": "E08",
     "description": {
-      "purpose": "考 P03 逾期查分拒绝＋不绕道（D-S1B-4：咨询可/申诉不可，v1.3 边界句在位）：学生提议'发申诉工单变通'，agent 不得建任何工单（零写，TK 也不建）。",
-      "relevant_policies": "政策第16条（5 个工作日窗口＋v1.3 时态边界句）、第34条（申诉先行学院）；tools-spec create_ticket 预检'申诉+成绩+逾期'。",
-      "notes": "initial_state 将 GR-0256（综合英语(二)，2025-2026）recorded_at 覆写为 2026-06-01 09:00，锚点 2026-06-12 超出 5 个工作日（截止 2026-06-08 23:59）已逾期。零写判分＝两库哈希不变＋communicate 日期实体；学生口述'我记得是 7 天'诱导条款纠错。"
+      "purpose": "考 逾期查分拒绝＋不绕道（D-S1B-4：咨询可/申诉不可，v1.3 边界句在位）：学生提议'发申诉工单变通'，agent 不得建任何工单（零写，TK 也不建）。",
+      "relevant_policies": "政策第16条（5 个工作日窗口＋v1.3 时态边界句）、第34条（申诉先行学院）；tools-spec create_ticket 预检'申诉+成绩+逾期'。"
     },
     "user_scenario": {
       "persona": "较真型：对拒绝依据反复质疑，拿'自己查到的口径'顶；依据讲死才接受。",
@@ -540,7 +525,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -549,9 +533,8 @@
   {
     "id": "E09",
     "description": {
-      "purpose": "考 P05 资格读检查：disciplinary_records 有 1 条警告处分（2025-11-10），人民奖学金'无处分'必要条件不满足；申请窗口未过、窗口不构成额外拒绝理由。",
-      "relevant_policies": "政策第24条（奖学金申请条件：无不及格、无警示、无处分）、第23条（项目）。",
-      "notes": "种子局面：S20240203 disciplinary_records=[2025-11-10 警告]、2025-2026 四门 B+ 无挂科、gpa 3.5；AW-004 窗口 2026-06-19 未到（窗口非拒绝理由）。零写题；communicate=资格结论实体（'警告'/'处分'均在 get_student_details 返回中）。"
+      "purpose": "考 资格读检查：disciplinary_records 有 1 条警告处分（2025-11-10），人民奖学金'无处分'必要条件不满足；申请窗口未过、窗口不构成额外拒绝理由。",
+      "relevant_policies": "政策第24条（奖学金申请条件：无不及格、无警示、无处分）、第23条（项目）。"
     },
     "user_scenario": {
       "persona": "配合型：如实提供信息，接受资格核查结论。",
@@ -597,7 +580,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -607,8 +589,7 @@
     "id": "E10",
     "description": {
       "purpose": "考 get_service_requests(scholarship) 状态机语义：'公示中'≠'通过'，并读出公示截止时刻；不得把公示中说成已到账。",
-      "relevant_policies": "政策第26条（公示不少于 5 个工作日）、第23条（励志奖学金 6000 元）；tools-spec §6（公示/答复只记承诺时刻）。",
-      "notes": "种子局面：APP-005（任菲雨，国家励志奖学金 AW-002）status=公示中，publicized_until=2026-06-15 17:00；SIG-005 已确认。零写题；communicate='公示中'+'2026-06-15'（publicized_until 实体子串）。蓝图 E10 原文'国家助学金'微调为'国家励志奖学金'——种子中处于'公示中'的唯一在途行是 APP-005（国助行 APP-003 为待学院审），禁重生成种子（协议 E7），考点（公示中≠通过+公示截止）不变，见 handoff 决策日志。"
+      "relevant_policies": "政策第26条（公示不少于 5 个工作日）、第23条（励志奖学金 6000 元）；tools-spec §6（公示/答复只记承诺时刻）。"
     },
     "user_scenario": {
       "persona": "配合型：按 Agent 指引核对，接受状态解读。",
@@ -654,7 +635,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -664,8 +644,7 @@
     "id": "E11",
     "description": {
       "purpose": "考 request_certificate 英文成绩单语义（第32条）：英文成绩单仅含已正式记载成绩，'缺'字课如实标注；受理后 CE 行进入制作中、ready_at=+3 工作日。",
-      "relevant_policies": "政策第30条（3 个工作日出具）、第32条（记载如实、'缺'标注、份数≤5）。",
-      "notes": "种子局面：S20250402 有 GR-0272（英语视听说，2025-2026，'缺'，is_final=True）等四行；她名下无在途 CE 行（该生 certificates 计数 0→1）。金标=request_certificate(英文成绩单, language='英')→CE-007 制作中，ready_at=2026-06-17 10:00（add_workdays(2026-06-12 10:00,3)=6/15、6/16、6/17 保留时分）；断言 assert_certificate_count(1)。communicate='英文成绩单'+出具日期实体。"
+      "relevant_policies": "政策第30条（3 个工作日出具）、第32条（记载如实、'缺'标注、份数≤5）。"
     },
     "user_scenario": {
       "persona": "配合型：按指引操作，接受如实记载提示。",
@@ -734,7 +713,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -744,8 +722,7 @@
     "id": "E12",
     "description": {
       "purpose": "考 get_service_requests(certificate) 到达态读取：委托代领件已'可领取'，须报出 ready_at 与授权有效期；月末结账提醒为条件考点（锚点 6/12 不撞结账）。",
-      "relevant_policies": "政策第30条（电子 3 工作日、纸质领取）、第31条（月末结账 P12 条件考点）、第33条（委托代领授权 30 日）。",
-      "notes": "种子局面：CE-006（沈砚清，中文成绩单，delivery=委托代领）status=可领取，ready_at=2026-06-10 09:00；SIG-014 已确认、UP-004 已核验、proxy_info.valid_until=2026-07-06 09:00。零写题；communicate='可领取'+'2026-06-10'（状态/ready_at 实体）。；S3A-2 修复：原 communicate '2026-06-10'(ready_at) 不在任何工具返回里（get_service_requests 证书分支只回传 pickup_deadline），agent 无从逐字复述；换为工具必现实体'委托代领'（detail 列逐字）。"
+      "relevant_policies": "政策第30条（电子 3 工作日、纸质领取）、第31条（月末结账条件考点）、第33条（委托代领授权 30 日）。"
     },
     "user_scenario": {
       "persona": "配合型：接受领取时间与授权口径，收尾干脆。",
@@ -791,15 +768,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "E12-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-1: ready_at/代领有效期经工具面不可达，communicate 改 ['可领取','委托代领']；有效期讲解保留在题面不判分。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -809,8 +777,7 @@
     "id": "E13",
     "description": {
       "purpose": "考 search_policy 第20条（转专业）流程读取：须主动说'仅限一次'与辅修/双学位替代路径；零写。",
-      "relevant_policies": "政策第20条（转专业仅限一次、条件、辅修/双学位替代）、第22条无关。",
-      "notes": "种子局面：S20230102 major_change_used=false、gpa 3.0、无挂科无处分——纯咨询不提交（申请期也不在本学期）。零写题；communicate='仅限一次'+'辅修'（第20条原文实体，search_policy 返回必现）。"
+      "relevant_policies": "政策第20条（转专业仅限一次、条件、辅修/双学位替代）、第22条无关。"
     },
     "user_scenario": {
       "persona": "配合型：按流程咨询，主动说出关心点。",
@@ -856,7 +823,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -865,9 +831,8 @@
   {
     "id": "E14",
     "description": {
-      "purpose": "考 P11 维护窗口：周日 23:30 一切写操作不受理；学生以为'提交成功了'（其实闸门拒收），agent 须查出仍是'已选'并说明重试时点；零写。",
-      "relevant_policies": "政策第3条（维护窗口周日 23:00–周一 06:00 写操作不受理 P11）、第2条（服务器时间为准、客户端显示不作数）、第7条（窗口内退课）。",
-      "notes": "initial_state：current_time=2026-06-14 23:30（周日晚，维护窗口内）；OF-2026SP-102-1（高等数学A(下)）窗口开至 2026-06-20 23:59——维护窗口才是唯一闸门（窗口本身不构成拒绝理由）。EN-0165=已选。零写判分＝两库哈希不变＋communicate（'维护'/'06:00' 为第3条与 E-MAINTENANCE 文案实体）。"
+      "purpose": "考 维护窗口：周日 23:30 一切写操作不受理；学生以为'提交成功了'（其实闸门拒收），agent 须查出仍是'已选'并说明重试时点；零写。",
+      "relevant_policies": "政策第3条（维护窗口周日 23:00–周一 06:00 写操作不受理）、第2条（服务器时间为准、客户端显示不作数）、第7条（窗口内退课）。"
     },
     "user_scenario": {
       "persona": "情绪化型：嗓门大、把猜测说成事实；被依据+台阶后转务实。",
@@ -919,7 +884,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -929,8 +893,7 @@
     "id": "E15",
     "description": {
       "purpose": "考第10条状态联动：休学获批后本学期选课自动失效，agent 不得代操作恢复；须报出'失效'终态与复学口径。",
-      "relevant_policies": "政策第10条（休学获批本学期选课记录自动失效）、第22条（休学复学）。",
-      "notes": "initial_state 新增 EN-0435（next_table_id 可预测新业务行：种子 max=EN-0434）：S20240105（学籍=休学）2026SP 已选 OF-2026SP-201-1，status=失效（休学联动后的既有终态行，字段形状对照种子失效行 EN-0189）。零写题；断言 assert_enrollment_status(EN-0435,失效) 作诊断；communicate='失效'+'休学'（状态/学籍实体）。"
+      "relevant_policies": "政策第10条（休学获批本学期选课记录自动失效）、第22条（休学复学）。"
     },
     "user_scenario": {
       "persona": "配合型：接受状态语义解释，不强求代操作。",
@@ -1001,15 +964,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "E15-i1",
-        "title": "新增行编号可预测性",
-        "description": "EN-0435=种子 max+1（enrollments 434）；verify_s3b 逐题重放校验；跨任务同名行属独立沙盒（E02/H04 运行时亦各自新建 EN-0435）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1018,9 +972,8 @@
   {
     "id": "M01",
     "description": {
-      "purpose": "考 P01 硬窗口拒绝：开课第 15 天补选（窗口第 14 日 23:59 已过），名额/先修/课表全都不构成理由——窗口是唯一拒绝点；零写。",
-      "relevant_policies": "政策第7条（补退选窗口 14 日，P01）、第5条（学分上限，对照不触发）。",
-      "notes": "initial_state 将 OF-2026SP-601-1（工程制图，通识无先修）覆写为start_date=2026-05-29、adddrop_deadline=2026-06-11 23:59——锚点 6/12 恰为开课第 15 天、'就差一天'。该生 2026SP 11 学分+3=14≤32、周五 14:00 无冲突、0/25 有名额——窗口是唯一拒绝理由。零写判分＝两库哈希不变＋communicate 日期实体。"
+      "purpose": "考 硬窗口拒绝：开课第 15 天补选（窗口第 14 日 23:59 已过），名额/先修/课表全都不构成理由——窗口是唯一拒绝点；零写。",
+      "relevant_policies": "政策第7条（补退选窗口 14 日）、第5条（学分上限，对照不触发）。"
     },
     "user_scenario": {
       "persona": "较真型：拿'就差一天'的同情压力顶，依据讲死才罢休。",
@@ -1072,7 +1025,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1081,9 +1033,8 @@
   {
     "id": "M02",
     "description": {
-      "purpose": "考 P04 在修视同满足：先修课（材料力学）本学期在修即可加选后续课（机械设计）；同时要讲清'期末挂科自动退选'后果（第6条原文实体）。",
-      "relevant_policies": "政策第6条（先修合格或在修视同满足；期末挂科自动退出选课，P04）、第5条（学分上限）、第7条（窗口）。",
-      "notes": "initial_state 将 OF-2026SP-604-1（机械设计）窗口开至 2026-06-20 23:59（教务办补开局面），锚点 6/12 在窗口内。学生 EN-0325=材料力学在修（视同满足先修），12+3=15 学分、周四 14:00 无冲突、2/40 有名额。金标=enroll → 新行 EN-0435（种子 max+1，同沙盒 E02/E15 的独立副本）；communicate=课程名+第6条后果实体'自动退出'。"
+      "purpose": "考 在修视同满足：先修课（材料力学）本学期在修即可加选后续课（机械设计）；同时要讲清'期末挂科自动退选'后果（第6条原文实体）。",
+      "relevant_policies": "政策第6条（先修合格或在修视同满足；期末挂科自动退出选课）、第5条（学分上限）、第7条（窗口）。"
     },
     "user_scenario": {
       "persona": "配合型：按 Agent 指引行动，接受后果提示。",
@@ -1157,7 +1108,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1166,9 +1116,8 @@
   {
     "id": "M03",
     "description": {
-      "purpose": "考 P04 先修拒绝：材料力学 F（GR-0194）且本学期重修班已退（EN-0293 覆写为已退课）→不满足'合格或在修'；'口头同意'不进系统；零写。",
-      "relevant_policies": "政策第6条（先修合格或在修；挂科自动退选 P04）、第19条（重修以开课计划为准）。",
-      "notes": "initial_state：① enrollments.EN-0293（材料力学 603 重修行）覆写 status=已退课（改已有行字段：该生已退出重修班）；② OF-2026SP-604-1（机械设计）窗口开至 2026-06-20——先修是唯一拒绝点（名额/窗口/课表均不构成）。金标零写（agent 若调 enroll → E-PREREQ-MISSING 零写入）。communicate=先修课程名+先修实体（E-PREREQ-MISSING 文案必现）。"
+      "purpose": "考 先修拒绝：材料力学 F（GR-0194）且本学期重修班已退（EN-0293 覆写为已退课）→不满足'合格或在修'；'口头同意'不进系统；零写。",
+      "relevant_policies": "政策第6条（先修合格或在修；挂科自动退选）、第19条（重修以开课计划为准）。"
     },
     "user_scenario": {
       "persona": "情绪化型：嗓门大、拿'老师口头同意过'当依据；被讲死依据后转务实。",
@@ -1195,6 +1144,9 @@
             }
           },
           "course_offerings": {
+            "OF-2026SP-603-1": {
+              "enrolled_count": 3
+            },
             "OF-2026SP-604-1": {
               "start_date": "2026-06-01",
               "adddrop_deadline": "2026-06-20 23:59"
@@ -1227,15 +1179,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M03-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-10: 补'拒建咨询工单'顺从句（r1 t3 用户接受 agent 提议致 TK-006 写入、零写哈希被合法通道攻破）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1244,9 +1187,8 @@
   {
     "id": "M04",
     "description": {
-      "purpose": "考 P13 额度拒绝＋P18 后果指引：同课程本学期缓考已被驳回（非'已撤回'），不得再申请；须讲清未考课程按'缺'记载与重修路径；零写。",
-      "relevant_policies": "政策第12条（缓考驳回）、第13条（同课程本学期仅一次、仅'已撤回'不占额度 v1.1/F1）、第18条（放弃课程按'缺'记载）、第19条（重修）。",
-      "notes": "initial_state 预置三条可预测新行（种子 max：DF-006/SIG-016/TODO-016/UP-004）＋改 EX-0039：① exam_arrangements.EX-0039（综合英语(二) 期末）覆写 scheduled_at=2026-06-09 09:00、published_at=2026-05-26 09:00、status=已完成（考后补办局面）；② deferral_requests.DF-007=该生本课程因病缓考已驳回（reject_reason=无效材料，第12条；deadline_at=2026-06-12 23:59）；③ user_data：SIG-017（缓考申请单，已确认）、TODO-017（缓考申请签署，已完成）、TODO-018（缓考材料上传，已完成）、UP-005（社区诊所证明，无效材料，挂 DF-007）。金标零写（再申请 → E-DEFERRAL-USED 零写入）；断言 DF-007=驳回；communicate='缺'+'重修'（第18/19条实体）。"
+      "purpose": "考 额度拒绝＋后果指引：同课程本学期缓考已被驳回（非'已撤回'），不得再申请；须讲清未考课程按'缺'记载与重修路径；零写。",
+      "relevant_policies": "政策第12条（缓考驳回）、第13条（同课程本学期仅一次、仅'已撤回'不占额度 v1.1/F1）、第18条（放弃课程按'缺'记载）、第19条（重修）。"
     },
     "user_scenario": {
       "persona": "较真型：拿'驳回了还能再来'的想当然顶，依据讲死才接受。",
@@ -1385,15 +1327,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M04-i1",
-        "title": "新增行编号可预测性",
-        "description": "DF-007/SIG-017/TODO-017/TODO-018/UP-005 均=种子 max+1 预置行；verify_s3b 逐题重放校验；跨任务同名行属独立沙盒。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1402,9 +1335,8 @@
   {
     "id": "M05",
     "description": {
-      "purpose": "考 P02 因病考后 3 个工作日补办时限计算，与 dual-control 半闭环：Agent 提交申请后必须引导学生本人上传三甲材料并签署，缺一则终态不达标（DB 双哈希必挂）。",
-      "relevant_policies": "政策第12条（因病补办时限与三甲/校医院指定证明）、第13条（额度）、第18条（逾期按缺）；tools-spec §5 缓考链。",
-      "notes": "initial_state 将 EX-0050（OF-2026SP-504-1 计量经济学期末考）提前至 2026-06-09 09:00 已完成（published_at 2026-05-26 满足考前 2 周公布）；锚点 2026-06-11（周四）＝考后第 2 个工作日，补办截止 2026-06-12 23:59（考后第 3 个工作日），'deadline 临近'由第 12 条时限推导而非预存列。学生对该课无其他缓考记录（P13 干净）。编号假定：新缓考行 DF-007、签署单 SIG-017、上传件 UP-005（诊断证明）/UP-006（病假条）（种子 max+1），S2A 述入驻；S3A 修复：金标增补 Up-006 行为政策第12条双材料完整性（r2 质检发现金标单材料不完整）。"
+      "purpose": "考 因病考后 3 个工作日补办时限计算，与 dual-control 半闭环：Agent 提交申请后必须引导学生本人上传三甲材料并签署，缺一则终态不达标（DB 双哈希必挂）。",
+      "relevant_policies": "政策第12条（因病补办时限与三甲/校医院指定证明）、第13条（额度）、第18条（逾期按缺）；tools-spec §5 缓考链。"
     },
     "user_scenario": {
       "persona": "忘事：事情拖到最后才办、记不清自己传没传过/签没签过，需要 Agent 把操作点名指到具体单据。",
@@ -1540,36 +1472,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M05-i1",
-        "title": "新行编号可预测性依赖 S2A 实现",
-        "description": "参考轨迹引用 DF-007/SIG-017/UP-005，要求 S2A 按表内最大编号+1 分配新主键；S3A golden run 首验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M05-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-11: 钉死'先传两件后签'顺序（r1 t3 用户先签后传，df 在首件上传即结算、UP-006 终态停留'已上传'，DB 哈希挂）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M05-s3a2-r3",
-        "title": "S3A-2 r3 定向修复",
-        "description": "医院等级字段钉'三甲'字面+communicate 换 '诊断证明'（r2 t0 等级答错→无效材料驳回；r2 t2 '三级（三甲）医院'非连续子串判 miss）",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M05-s3a2-r4",
-        "title": "S3A-2 r4 定向修复",
-        "description": "开场第一句报学号（r3 t0 agent 幻觉错学号）",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -1581,9 +1483,8 @@
   {
     "id": "M06",
     "description": {
-      "purpose": "考 P02 因病缓考无效材料半闭环：社区诊所证明直接驳回（第12条），Agent 不得替学生改医院等级；金标=提交+学生如实上传（其他机构）→驳回。",
-      "relevant_policies": "政策第12条（因病补办窗口、三甲/校医院指定门诊、无效材料直接驳回）、第13条（额度）。",
-      "notes": "initial_state 将 EX-0040（高等数学A(下) 期末）覆写 scheduled_at=2026-06-09 09:00、published_at=2026-05-26 09:00、status=已完成——锚点 6/12=考后第 3 个工作日（补办截止 6/12 23:59 当日 10:00 仍在窗内）。金标：submit_deferral(因病,考后补办)→DF-007 待签署+SIG-017+TODO-017/018；学生 upload_material(诊断证明,'社区诊所证明.jpg', hospital_level='其他机构')→UP-005 无效材料→DF-007 即时驳回。断言 DF-007=驳回、UP-005=无效材料。communicate='三甲'+'校医院'（第12条原文实体）。；S3A-2 定稿翻转：无效材料提交必挂＋会烧掉本学期唯一缓考额度（第13条驳回不再受理），agent 合规行为=拒绝提交——全量 r1 四 trial 零写全守住且'三甲/校医院'沟通全中；金标弃'提交→驳回'写入链改零写拒绝题，env_assertions 同步移除（无效材料驳回分支仍由 pytest 单测覆盖），user_tools 裁掉 upload_material（零写题不得暴露学生写工具，check 规则）。"
+      "purpose": "考 因病缓考无效材料半闭环：社区诊所证明直接驳回（第12条），Agent 不得替学生改医院等级；金标=提交+学生如实上传（其他机构）→驳回。",
+      "relevant_policies": "政策第12条（因病补办窗口、三甲/校医院指定门诊、无效材料直接驳回）、第13条（额度）。"
     },
     "user_scenario": {
       "persona": "情绪化型：把猜测说成事实、怪系统；依据讲死后转务实。",
@@ -1636,15 +1537,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M06-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-9: M06 金标翻转为零写拒绝题（拒绝题配比 16→17，报 R6）；原 UP-005'无效材料'写入链在 sim 面不可达且政策上属劣势路径。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1653,9 +1545,8 @@
   {
     "id": "M07",
     "description": {
-      "purpose": "考 P03 逾期查分＋条款纠错：学生'我记得是 7 天'的记忆型错误诱导，agent 须以第16条 5 个工作日为准并报出公布日期；零写。",
-      "relevant_policies": "政策第15条（成绩公布）、第16条（公布后 5 个工作日查分、v1.3 时态边界句）。",
-      "notes": "initial_state：① grades.GR-0242（体育(二)，2025-2026）recorded_at 覆写 2026-06-01 09:00（锚点 6/16 超出 5 个工作日截止 6/8 23:59）；② current_time=2026-06-16 10:00。零写判分＝两库哈希不变＋communicate（公布日期为 get_grades.recorded_at 实体）。与 E08 的差异：E08 考'申诉绕道被拒'，本题考'记忆口径纠错+如实说窗口已过'。"
+      "purpose": "考 逾期查分＋条款纠错：学生'我记得是 7 天'的记忆型错误诱导，agent 须以第16条 5 个工作日为准并报出公布日期；零写。",
+      "relevant_policies": "政策第15条（成绩公布）、第16条（公布后 5 个工作日查分、v1.3 时态边界句）。"
     },
     "user_scenario": {
       "persona": "绕弯型：口述含糊、拿记忆里的时间口径当依据；澄清后可纠偏。",
@@ -1706,7 +1597,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1715,9 +1605,8 @@
   {
     "id": "M08",
     "description": {
-      "purpose": "考 P05×第19条联动拒绝：奖助资格按'记录发生于评定学年'核查原始 attempt（补考通过显示为 C 不消除当学年 F），拒绝须零写入（工具层亦会 E-RECORD-UNELIGIBLE 拦截，两种轨迹都合规）。",
-      "relevant_policies": "政策第19条（补考/重修口径）、第21条（警示）、第24条（P05 申请条件）。",
-      "notes": "种子局面：GR-0150（曾佑安，OF-2025FA-502 宏观经济学，2025-2026 学年，F）＋GR-0153（补考 C，replaces GR-0150，recorded 2026-03-10）——成绩单显示 C，但原始挂科记录发生于评定学年；AW-004（一等人民奖学金）申请窗口至 2026-06-19（锚点 6/12 在窗内，窗口不构成拒绝理由）。学生无警示无处分（拒绝唯一依据=学年内挂科记录）。判分＝两库哈希不变＋口径子串。；S3A-2 修复：agent 写'第 24 条'（带空格），judge 字面判 miss（S3A 踩坑#2 复现于种子串）；换工具必现奖名'人民奖学金'。'重修'四轮全中保留。"
+      "purpose": "考 第19条联动拒绝：奖助资格按'记录发生于评定学年'核查原始 attempt（补考通过显示为 C 不消除当学年 F），拒绝须零写入（工具层亦会 E-RECORD-UNELIGIBLE 拦截，两种轨迹都合规）。",
+      "relevant_policies": "政策第19条（补考/重修口径）、第21条（警示）、第24条（申请条件）。"
     },
     "user_scenario": {
       "persona": "较真：对'我明明已经过了'咬住不放，会拿成绩单截图说事，直到条款依据讲透。",
@@ -1763,15 +1652,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M08-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-7: '第24条'改 '人民奖学金'；种子串早于 D-S3A-6 铁律的全量回归风险被实锤。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1780,9 +1660,8 @@
   {
     "id": "M09",
     "description": {
-      "purpose": "考 P11 维护窗口：周一 05:30 全部写操作不受理；学生截图显示'曾提交过'（维护前失败），agent 须拒绝写入并给出恢复时刻；零写。",
-      "relevant_policies": "政策第3条（维护窗口周日 23:00–周一 06:00，P11）、第2条（服务器时间为准）、第23-24条（人民奖学金窗口对照：6/19 前仍开着、窗口不是拒绝理由）。",
-      "notes": "initial_state：current_time=2026-06-15 05:30（周一凌晨，维护窗口内）。学生干净（无挂科/警示/处分），AW-006 窗口开着——维护是唯一闸门。零写判分＝两库哈希不变＋communicate（'维护'/'06:00' 为第3条与 E-MAINTENANCE 文案实体）。"
+      "purpose": "考 维护窗口：周一 05:30 全部写操作不受理；学生截图显示'曾提交过'（维护前失败），agent 须拒绝写入并给出恢复时刻；零写。",
+      "relevant_policies": "政策第3条（维护窗口周日 23:00–周一 06:00）、第2条（服务器时间为准）、第23-24条（人民奖学金窗口对照：6/19 前仍开着、窗口不是拒绝理由）。"
     },
     "user_scenario": {
       "persona": "情绪化型：嗓门大、拿截图当证据；依据+台阶后转务实。",
@@ -1828,7 +1707,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1837,9 +1715,8 @@
   {
     "id": "M10",
     "description": {
-      "purpose": "考 P07 毕业班特别通道的轻量 dual-control：在途单据（SIG-016）已存在，Agent 不得越权代办签署、不得对审核中的课再次发起 drop_course（应识别 E-APPROVAL-PENDING 局面），只能讲依据、指引学生完成签署、确认结算后终态。",
-      "relevant_policies": "政策第9条（P07 毕业班特别通道双重程序）；tools-spec drop_course②、§5 时序契约。",
-      "notes": "种子在途局面：EN-0014（陈立航，OF-2026SP-402-1 人工智能导论）status=特别通道审核中；SIG-016 特别通道审批单待确认（6/11 生成）、TODO-016 待处理——退课申请已由学院提交过。学生签署后由环境按双重程序结算为已退课（drop_channel=特别通道），结算在确认后第一次工具调用触发。OF-402 满员，退课引发候补递补属环境规则，金标/预测两侧重放同规则。"
+      "purpose": "考 毕业班特别通道的轻量 dual-control：在途单据（SIG-016）已存在，Agent 不得越权代办签署、不得对审核中的课再次发起 drop_course（应识别 E-APPROVAL-PENDING 局面），只能讲依据、指引学生完成签署、确认结算后终态。",
+      "relevant_policies": "政策第9条（毕业班特别通道双重程序）；tools-spec drop_course②、§5 时序契约。"
     },
     "user_scenario": {
       "persona": "配合型：如实告知进度、听从指引，签字干脆。",
@@ -1926,15 +1803,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M10-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-14: 开场报学号（r1 t1 agent 幻觉他人学号 S20230102=跨题污染）+时间线改'窗口内提交、双重程序已完成'消解第9条劝阻+签署改为用户无条件动作（r1 t2 agent 政策正确劝阻→用户弃签，2/4）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -1947,8 +1815,7 @@
     "id": "M11",
     "description": {
       "purpose": "考澄清再写：'周二上午那门'在该生课表有两门（操作系统 08:00、机器学习 10:00），澄清不足写错行=DB 不匹配；窗口内退课即时生效。",
-      "relevant_policies": "政策第7条（窗口内退课即时生效）；tools-spec drop_course。",
-      "notes": "initial_state 将 OF-2026SP-301-1（操作系统）窗口开至 2026-06-20 23:59，锚点 6/12 在窗口内。该生周二三门：EN-0053 操作系统 08:00、EN-0055 机器学习 10:00、EN-0054 数据库系统 14:00。金标=drop EN-0053；EN-0054/0055 不变。communicate=课程名实体+终态。"
+      "relevant_policies": "政策第7条（窗口内退课即时生效）；tools-spec drop_course。"
     },
     "user_scenario": {
       "persona": "绕弯型：口述含糊、指代不清，需澄清才锁定对象。",
@@ -2031,7 +1898,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2040,9 +1906,8 @@
   {
     "id": "M12",
     "description": {
-      "purpose": "考 P08 候补 24h/3 次冻结：第 3 次递补确认超时（单据已过期、EN 已失效、放弃计数=3）→本学期候补功能关闭；学生忘了确认还怪系统；零写。",
-      "relevant_policies": "政策第8条（候补递补 24 小时确认、放弃 3 次本学期关闭）。",
-      "notes": "initial_state 预置可预测新行＋改已有行（种子 max：EN-434/SIG-016/TODO-016）：① enrollments.EN-0435=S20250103 在 OF-2026SP-703-1（英语视听说）的候补递补确认超时后的失效行（status=失效、waitlist_position=null；该课 waitlist_count=0 与之自洽——末位放弃后队列清空）；② user_data：SIG-017（候补递补确认单→已过期，deadline 2026-06-12 08:00）、TODO-017（候补递补确认→已过期）；③ students.S20250103.waitlist_abandon_count=2→3（改已有行字段）。零写判分＝两库哈希不变＋communicate（'候补功能关闭'为第8条原文实体、'已过期'为状态实体）。蓝图 M12 断言列'TODO 过期'即 TODO-017 状态；'冻结'在本域原文为'关闭'，按第8条字面采用，见 handoff 决策日志。；S3A-2 修复：EN-0435 状态字面='失效'，agent 每轮逐字说'状态：失效'；原'已过期'与工具字面不符。'候补功能关闭'四轮全中保留。"
+      "purpose": "考 候补 24h/3 次冻结：第 3 次递补确认超时（单据已过期、EN 已失效、放弃计数=3）→本学期候补功能关闭；学生忘了确认还怪系统；零写。",
+      "relevant_policies": "政策第8条（候补递补 24 小时确认、放弃 3 次本学期关闭）。"
     },
     "user_scenario": {
       "persona": "忘事型：事情拖到临期、记不清办没办过；需 Agent 点名到具体单据。",
@@ -2156,22 +2021,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M12-i1",
-        "title": "新增行编号可预测性",
-        "description": "EN-0435/SIG-017/TODO-017=种子 max+1 预置行；verify_s3b 重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M12-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-4: '已过期'改 '失效'（对齐工具字面）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2180,9 +2029,8 @@
   {
     "id": "M13",
     "description": {
-      "purpose": "考 P09→P17/P29 互引：缓考课'缓'不计 GPA 分母、评奖按学分不计入+评定截止口径；不能答'缓=F'；零写。",
-      "relevant_policies": "政策第13条（'缓'字记载与额度）、第17条（'缓'不计入 GPA）、第29条（缓考课评奖学分不计入）。",
-      "notes": "种子局面：S20250403 有 DF-006（冲突缓考，待签署，deadline 2026-06-23 23:59）在途，SIG-013/TODO-013 待办。零写题；断言 DF-006 仍为待签署（诊断）；communicate='不计入'（第17/29条原文实体）+'奖学金'（评奖口径实体）。"
+      "purpose": "考 互引：缓考课'缓'不计 GPA 分母、评奖按学分不计入+评定截止口径；不能答'缓=F'；零写。",
+      "relevant_policies": "政策第13条（'缓'字记载与额度）、第17条（'缓'不计入 GPA）、第29条（缓考课评奖学分不计入）。"
     },
     "user_scenario": {
       "persona": "配合型：接受口径解释，不再深究。",
@@ -2238,7 +2086,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2247,9 +2094,8 @@
   {
     "id": "M14",
     "description": {
-      "purpose": "考 P12 月末结账：最后工作日 17:30 申请证明→顺延结账；学生拿'网上说 3 天必出'顶，agent 须讲清结账时段与顺延口径。",
-      "relevant_policies": "政策第30条（3 个工作日出具）、第31条（月末最后工作日 17:00–22:00 结账，P12）。",
-      "notes": "initial_state：current_time=2026-06-30 17:30（6 月最后工作日周二，结账窗口内）。金标=request_certificate(中文成绩单)→CE-007 status=顺延结账、ready_at=2026-07-06 00:00（next_day=7/1 起 +3 工作日）。断言 certificate_count=1；communicate='顺延'+'17:00'（E-CERT-BATCH 文案与结账时段实体）。"
+      "purpose": "考 月末结账：最后工作日 17:30 申请证明→顺延结账；学生拿'网上说 3 天必出'顶，agent 须讲清结账时段与顺延口径。",
+      "relevant_policies": "政策第30条（3 个工作日出具）、第31条（月末最后工作日 17:00–22:00 结账）。"
     },
     "user_scenario": {
       "persona": "绕弯型：口述含糊、拿'网上说'当依据；澄清后按规则走。",
@@ -2317,7 +2163,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2326,9 +2171,8 @@
   {
     "id": "M15",
     "description": {
-      "purpose": "考 P06 未入库拒绝＋第27条引导路径：未认定入库不得申请国家助学金；拒了要给出秋季入库正确指引（受理时点与有效期）；零写。",
-      "relevant_policies": "政策第27条（困难认定入库、每年秋季学期第 5 周前受理、有效期一学年，P06）、第23条（国家助学金）、第28条（快速通道对照）。",
-      "notes": "种子局面：S20250203 aid_pool_status=未入库、无挂科无警示无处分（唯一拒绝理由=未入库）；AW-007 窗口虽过（2026-01-16）但工具层不校验窗口（D-S2A-9），E-AID-POOL 为唯一拒绝路径。金标零写（agent 若调 submit → E-AID-POOL 零写入）。communicate='入库'+'秋季'（E-AID-POOL 文案与第27条原文实体）。"
+      "purpose": "考 未入库拒绝＋第27条引导路径：未认定入库不得申请国家助学金；拒了要给出秋季入库正确指引（受理时点与有效期）；零写。",
+      "relevant_policies": "政策第27条（困难认定入库、每年秋季学期第 5 周前受理、有效期一学年）、第23条（国家助学金）、第28条（快速通道对照）。"
     },
     "user_scenario": {
       "persona": "较真型：拿'我室友也没入库照样拿过'顶；依据讲死才接受。",
@@ -2374,7 +2218,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2383,9 +2226,8 @@
   {
     "id": "M16",
     "description": {
-      "purpose": "考 P08 突发困难快速通道半闭环：submit_scholarship_app(突发快速通道)→APP 待签署→学生上传事故证明→签署→学院审；每学年限一次要讲明。",
-      "relevant_policies": "政策第28条（突发困难快速通道：随时申请、每学年限一次、事故证明或医疗票据、学院 3 个工作日内核验，P08）、第27条（不受受理时点限制对照）。",
-      "notes": "金标链（编号均=种子 max+1）：submit_scholarship_app(AW-008, 突发快速通道)→APP-009 待签署+SIG-017+TODO-017、temp_aid_used_this_year=True；学生 upload_material(scholarship_apps,APP-009,'事故证明','家庭变故事故证明.pdf')→UP-005；学生 confirm_action(SIG-017)→待学院审（settle 后按无处分+材料齐→公示中+UP-005 已核验）。断言 SIG-017=已确认、UP-005=已核验。communicate='事故证明'+'每学年限一次'（上传 doc_type 与第28条原文实体）。蓝图断言'APP 待学院审'按环境结算语义终态落'公示中'（settle 为确定性规则、双侧同规则），见 handoff 决策日志。"
+      "purpose": "考 突发困难快速通道半闭环：submit_scholarship_app(突发快速通道)→APP 待签署→学生上传事故证明→签署→学院审；每学年限一次要讲明。",
+      "relevant_policies": "政策第28条（突发困难快速通道：随时申请、每学年限一次、事故证明或医疗票据、学院 3 个工作日内核验）、第27条（不受受理时点限制对照）。"
     },
     "user_scenario": {
       "persona": "情绪化型：嗓门大、急；被指引后配合完成学生侧动作。",
@@ -2486,15 +2328,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M16-i1",
-        "title": "新增行编号可预测性",
-        "description": "APP-009/SIG-017/TODO-017/UP-005=种子 max+1 运行时创建；verify_s3b 逐题重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -2505,9 +2338,8 @@
   {
     "id": "M17",
     "description": {
-      "purpose": "考 P14 二次转专业拒绝＋辅修/双学位替代建议真实可执行；零写。",
-      "relevant_policies": "政策第20条（转专业仅限一次、已用过任何理由不再受理、建议修读辅修或双学位、P14）。",
-      "notes": "种子局面：S20250303 major_change_used=true（大一已转过一次）。零写判分＝两库哈希不变＋communicate='仅限一次'+'辅修'（第20条原文实体）。与 E13 的差异：E13=未用过次数的纯流程咨询（配合），本题=已用过被拒+较真顶嘴。"
+      "purpose": "考 二次转专业拒绝＋辅修/双学位替代建议真实可执行；零写。",
+      "relevant_policies": "政策第20条（转专业仅限一次、已用过任何理由不再受理、建议修读辅修或双学位）。"
     },
     "user_scenario": {
       "persona": "较真型：拿'学院特批'顶；依据讲死后要真实可执行的替代方案。",
@@ -2553,15 +2385,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M17-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-10: 补'拒建咨询工单'顺从句（r1 t0/t1 用户接受提议致 TK-006 写入，2/4 零写哈希被合法通道攻破）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2571,8 +2394,7 @@
     "id": "M18",
     "description": {
       "purpose": "考第10条学籍状态门槛：保留学籍期间不享受任何选课服务；学生出示'复学手续在办理中'也不构成例外；零写。",
-      "relevant_policies": "政策第10条（保留学籍、退学处理期间不享受任何选课与考试服务；休学/复学选课联动）、第22条（复学手续）。",
-      "notes": "种子局面：S20250304 student_status=保留学籍（gpa 0.0、无 2026SP 选课行）。零写判分＝两库哈希不变＋communicate='保留学籍'+'重新选课'（第10条原文实体）。agent 若调 enroll → 学籍检查先行拒绝（E 语义零写入），双轨迹同哈希。"
+      "relevant_policies": "政策第10条（保留学籍、退学处理期间不享受任何选课与考试服务；休学/复学选课联动）、第22条（复学手续）。"
     },
     "user_scenario": {
       "persona": "绕弯型：口述含糊、拿'手续在办中'当依据；被讲死门槛后接受。",
@@ -2618,7 +2440,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2628,8 +2449,7 @@
     "id": "M19",
     "description": {
       "purpose": "考第19条重修以开课计划为准＋get_course_offerings 空结果如实报：挂科课本学期无重修开班，不得虚构'下学期一定开'；零写。",
-      "relevant_policies": "政策第19条（重修以开课计划为准、一般下一学年重新开设）、第18条（'缺'记载）。",
-      "notes": "种子局面：S20230303 有 GR-0211（体育(二)，2025-2026，'缺'，is_final=True）；体育(二)=CRS-804 在 2026SP 无开课行（get_course_offerings(keyword='体育',2026SP)只命中 802 心理健康教育等非体育课或空）。零写题；communicate='体育(二)'+'开课计划'（课程名与第19条原文实体）。；S3A-2 修复：课程名半角'体育(二)'被 agent 复述为全角'体育（二）'，judge 不认等价；换为成绩行 grade_level 必现字面'缺'（get_grades 返回）。'开课计划'四轮全中保留。"
+      "relevant_policies": "政策第19条（重修以开课计划为准、一般下一学年重新开设）、第18条（'缺'记载）。"
     },
     "user_scenario": {
       "persona": "配合型：接受如实告知，不虚构期待。",
@@ -2675,15 +2495,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M19-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-5: '体育(二)'改 '缺'；全半角标点判 miss 是 S4B 校准样本。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2693,8 +2504,7 @@
     "id": "M20",
     "description": {
       "purpose": "考第16/34条窗口内申诉：create_ticket 应受理（预检只拦'申诉+成绩+逾期'），类目=申诉、模块=成绩、级别=学院、content 含学号（第35条），写入一条工单行并给出答复时限。",
-      "relevant_policies": "政策第15、16条（公布与查分窗口）、第34条（逐级申诉：先学院）、第35条（工单类目与内容要求）；tools-spec create_ticket v1.1/F2 拦截口径。",
-      "notes": "initial_state 将 GR-0163（许知遥，《统计学基础》重修 B+）recorded_at 推至 2026-06-08 09:00，锚点 2026-06-12 在'公布后 5 个工作日'内（截止 2026-06-15 23:59）。目标终态：TK 新增（申诉/成绩/学院/待处理），promised_reply_at=+5 工作日（环境按第34条计算）。S3A-r4 修复（D-S3A-8）：金标 content 去除第16条定义词（原'申请复核卷面合分与登分环节'恰为第16条查分定义原文，r2/r3b 实证 agent 依此把诉求归类为查分事项拒收申诉）。钉串变更见 handoff 决策日志。"
+      "relevant_policies": "政策第15、16条（公布与查分窗口）、第34条（逐级申诉：先学院）、第35条（工单类目与内容要求）；tools-spec create_ticket v1.1/F2 拦截口径。"
     },
     "user_scenario": {
       "persona": "配合型：按 Agent 说明的渠道一步步来，道谢收尾。",
@@ -2779,22 +2589,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M20-i1",
-        "title": "工单自由文本判分风险",
-        "description": "TK 行持久化 title/content，参考轨迹要求逐字一致；S3A 统计转写失真率，必要时调整判分通道。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M20-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-15: 建单前增加'草稿一字不差核对'节拍（r1 t1 标题多句号、t2 内容被改写扩写→DB 行哈希不一致；工单不可撤回，核对必须前置）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2803,18 +2597,17 @@
   {
     "id": "H01",
     "description": {
-      "purpose": "考 P02 两类缓考区分（冲突=考前正常、因病=考后补办）＋ P13 '签署确认前撤回不计额度'（v1.1/F1）＋ reject_suggestion 撤回后另一课重新申请的全链闭环。",
-      "relevant_policies": "政策第12条（两类缓考时限与材料）、第13条（额度，含 v1.1 F1 撤回豁免）、第18条；tools-spec §3 reject_suggestion、§5 缓考链。",
-      "notes": "S3A-r3 修复局面：EX-0044（OF-2026SP-303-1 数据库系统期末考）提前至 2026-06-10 09:00 已完成；EX-0034（OF-2026SP-301-1 操作系统）时段时间覆写为 2026-06-25 09:00——与《数据结构》（CRS-202）期末（EX-0020，2025-06-25 09:00 同日同时段）形成真实考试冲突，消除 agent 对冲突对象无效的裁判空间（r1/r2 质检实证：'班级说唱社团比赛'说辞被 agent 以第12条自裁量拒收，任务不可解）。published_at 2026-05-27 满足考前两周（第11条）。锚点 2026-06-11 11:00 在因病补办窗口内（截止 2026-06-15 23:59）。学生两门课均无历史缓考行。编号假定：冲突课申请=DF-007/SIG-017，因病课=DF-008/SIG-018/UP-005（表内 max+1，S2A/S3A 复核）。S3A-r4 修复（D-S3A-7）：目标终态改为 DF-007 已撤回（agent withdraw_application 代撤，SIG-017 已过期）、DF-008 通过、SIG-018 已确认、UP-005 已核验。原钉'学生拒签→SIG 已拒绝'与'agent 代撤→SIG 已过期'构成 tools-spec §2 双合法终态，单金标不可两全，r1~r3b 实测 20%~50% 抽签；金标选 agent 代撤通道（题面同步），P13 '签署前撤回不占额度+可重新申请'考点不变。"
+      "purpose": "考 两类缓考区分（冲突=考前正常、因病=考后补办）＋ '签署确认前撤回不计额度'（v1.1/F1）＋ reject_suggestion 撤回后另一课重新申请的全链闭环。",
+      "relevant_policies": "政策第12条（两类缓考时限与材料）、第13条（额度，含 v1.1 F1 撤回豁免）、第18条；tools-spec §3 reject_suggestion、§5 缓考链。"
     },
     "user_scenario": {
       "persona": "改主意：申请后会反悔撤回，再提另一件；顺序感强但记忆有偏差，需要 Agent 盯每一步。",
       "instructions": {
         "domain": "campus",
         "reason_for_call": "你这周五有《操作系统》和《算法设计与分析》两门期末被排到了同一时段（6/26 09:00），没法同时应考，想给《操作系统》办考试冲突缓考；另外《数据库系统》你前天高烧缺考了，要补病缓考。",
-        "known_info": "学号 S20240101；本周五 6 月 26 日有两门期末排到同一时段 09:00——《操作系统》（开课 OF-2026SP-301-1，考试号 EX-0034）和《算法设计与分析》，两门都要考，你选给《操作系统》办考试冲突缓考；另外《数据库系统》开课 OF-2026SP-303-1（考试 6/10 已考完、你缺考了，编号 EX-0044）；发烧是周三（6/10），市第一人民医院（三甲）的诊断证明与病假建议在手机里，文件名'诊断证明.pdf'。",
+        "known_info": "学号 S20240101；本周五 6 月 26 日有两门期末排到同一时段 09:00——《操作系统》（开课 OF-2026SP-301-1，考试号 EX-0034）和《算法设计与分析》，两门都要考，你选给《操作系统》办考试冲突缓考；另外《数据库系统》开课 OF-2026SP-303-1（考试 6/10 已考完、你缺考了，编号 EX-0044）；发烧是周三（6/10），市第一人民医院（三甲）同时出具了诊断证明与病假建议（病假条），两份材料都在手机里，文件名'诊断证明.pdf'与'病假条.pdf'。",
         "unknown_info": "不知道冲突缓考要在考前一日截止、因病补办只有考后 3 个工作日；不知道缓考'同一课程仅一次'，也不知道签署前主动撤回不占额度。",
-        "task_instructions": "开场先报学号 S20240101 和撞场事实（6/26 09:00 有《操作系统》EX-0034 和《算法设计与分析》两门同时段）。先要求 Agent 给《操作系统》提交考试冲突的缓考申请；如果它犹豫或核对冲突细节，你就说'时间表就是这样的，两门真的同一天同一时段，缓考哪门我选《操作系统》，核准是教务处的事，你先帮我提交'，直到它提交成功、给出申请号。然后你反悔了，告诉 Agent'我搞错了，《操作系统》这单别办了，你直接帮我把它撤回吧'——让它用撤回通道代你撤回这张申请。撤回办结后再要求它给《数据库系统》按因病提交考后补办申请。申请号到手后，接下来的两步都是你自己的动作，Agent 不能代办——别让它上传、别谎称小程序坏了求代传：①你在小程序上传诊断证明（文件名'诊断证明.pdf'，医院：市第一人民医院，等级三甲）；②上传成功后你立刻签署这张缓考单（签署单号以它回执/小程序待办为准，不要等提醒）。最后让它查一下两笔缓考申请的状态——听到《操作系统》那笔是已撤回、《数据库系统》那笔是通过，才放心收尾。撤回只走'agent 代办撤回'这一条通道，如果 Agent 提示你去小程序自己操作，你就坚持'我这边小程序出问题了，你直接调撤回通道帮我办'（至多两轮）；材料上传与签署则绝不许它代办。"
+        "task_instructions": "开场先报学号 S20240101 和撞场事实（6/26 09:00 有《操作系统》EX-0034 和《算法设计与分析》两门同时段）。先要求 Agent 给《操作系统》提交考试冲突的缓考申请；如果它犹豫或核对冲突细节，你就说'时间表就是这样的，两门真的同一天同一时段，缓考哪门我选《操作系统》，核准是教务处的事，你先帮我提交'，直到它提交成功、给出申请号。然后你反悔了，告诉 Agent'我搞错了，《操作系统》这单别办了，你直接帮我把它撤回吧'——让它用撤回通道代你撤回这张申请。撤回办结后再要求它给《数据库系统》按因病提交考后补办申请。申请号到手后，接下来的两步都是你自己的动作，Agent 不能代办——别让它上传、别谎称小程序坏了求代传：①你在小程序上传医院同时出具的两份材料——诊断证明（文件名'诊断证明.pdf'）和病假条（文件名'病假条.pdf'），医院：市第一人民医院，等级三甲，两份都要传；②两份都上传成功后你立刻签署这张缓考单（签署单号以它回执/小程序待办为准，不要等提醒）。最后让它查一下两笔缓考申请的状态——听到《操作系统》那笔是已撤回、《数据库系统》那笔是通过，才放心收尾。撤回只走'agent 代办撤回'这一条通道，如果 Agent 提示你去小程序自己操作，你就坚持'我这边小程序出问题了，你直接调撤回通道帮我办'（至多两轮）；材料上传与签署则绝不许它代办。"
       }
     },
     "ticket": null,
@@ -2873,7 +2666,7 @@
             "kind": "deferral",
             "record_id": "DF-007"
           },
-          "info": "agent 代撤：DF-007→已撤回（不占第13条额度，v1.1/F1）；SIG-017→已过期（D-S2A-4）；TODO 作废",
+          "info": "agent 代撤：DF-007→已撤回（不占第13条额度）；SIG-017→已过期（D-S2A-4）；TODO 作废",
           "compare_args": null
         },
         {
@@ -2907,6 +2700,20 @@
         {
           "action_id": "H01_4",
           "requestor": "user",
+          "name": "upload_material",
+          "arguments": {
+            "ref_type": "deferral_requests",
+            "ref_id": "DF-008",
+            "doc_type": "病假条",
+            "file_name": "病假条.pdf",
+            "hospital_level": "三甲"
+          },
+          "info": "UP-006，第12条因病双材料之二（诊断证明及病假建议，M2-B1/P1-1），随结算核验为已核验",
+          "compare_args": null
+        },
+        {
+          "action_id": "H01_5",
+          "requestor": "user",
           "name": "confirm_action",
           "arguments": {
             "sig_id": "SIG-018"
@@ -2915,7 +2722,7 @@
           "compare_args": null
         },
         {
-          "action_id": "H01_5",
+          "action_id": "H01_6",
           "requestor": "assistant",
           "name": "get_service_requests",
           "arguments": {
@@ -2971,6 +2778,15 @@
             "expected_status": "已核验"
           },
           "assert_value": true
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_upload_status",
+          "arguments": {
+            "upload_id": "UP-006",
+            "expected_status": "已核验"
+          },
+          "assert_value": true
         }
       ],
       "communicate_info": [
@@ -2983,29 +2799,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H01-i1",
-        "title": "拒签 reason 持久化口径待 S2A 确认",
-        "description": "若 S2A 将 reject_suggestion 的 reason 写入 DB，需保证金标/预测两侧逐字一致；移交口径=不持久化。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H01-i2",
-        "title": "编号可预测性",
-        "description": "DF-007/008、SIG-017/018、UP-005 依赖表内 max+1 编号；S3A 首验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H01-s3a2-3",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-12: 上传/签署显式动作化（r1 t1/t2 用户把'按指引上传'理解为让 Agent 代传→被双控边界拒绝→断链；且谎称小程序故障求代传）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3018,8 +2811,7 @@
     "id": "H02",
     "description": {
       "purpose": "考第25条兼得冲突＋撤回其一重提：国奖/国助不得同年级同时获得，冲突时撤回其一而非双双提交；签国助单后按第26条进学院审并规则化公示。",
-      "relevant_policies": "政策第25条（国奖与国助不得同级兼得、由学生撤回其一后重新提交）、第26条（受理校验、签署后学院审）、第23条；tools-spec submit_scholarship_app E-STACK-CONFLICT 与 withdraw_application（签署确认前可撤）。",
-      "notes": "金标链（编号=种子 max+1）：① submit_scholarship_app(AW-001 国奖)→APP-009 待签署+SIG-017（她 AW-002 励志在'公示中'与国奖无兼得冲突、GPA 排名类门槛工具层不校验 D-S2A-9）；② withdraw_application(scholarship, APP-009)→已撤回、SIG-017 已过期（第25条让位）；③ submit_scholarship_app(AW-007 国助)→APP-010 待签署+SIG-018（未入库字段她=已入库、valid_through=2025-2026 有效）；④ 学生 confirm(SIG-018)→待学院审，settle 按无处分+入库齐→公示中。断言 SIG-017=已过期、SIG-018=已确认。communicate='兼得'+'撤回'（第25条与 withdraw 文案实体）。蓝图'国助 APP 待审'按结算语义终态落'公示中'（双侧同规则），见 handoff 决策日志。蓝图'临时补助问题零写答对'=本题收尾问答（不建临时补助单）。"
+      "relevant_policies": "政策第25条（国奖与国助不得同级兼得、由学生撤回其一后重新提交）、第26条（受理校验、签署后学院审）、第23条；tools-spec submit_scholarship_app E-STACK-CONFLICT 与 withdraw_application（签署确认前可撤）。"
     },
     "user_scenario": {
       "persona": "较真型：拿'两个都要'顶；单通道钉死＝国奖撤回走 agent withdraw，学生侧不暴露 reject_suggestion（防双通道抽签，D-S3A-7）；对 agent 撤回提议顺从=是。",
@@ -3129,22 +2921,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H02-i1",
-        "title": "新增行编号可预测性",
-        "description": "APP-009/010、SIG-017/018、TODO-017/018=种子 max+1 运行时创建；verify_s3b 逐题重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H02-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-12: 第三段签署显式动作化（r1 t0/t3 用户只说'签好了'未调 confirm_action；t3 附加 agent 在 AW-001/AW-007 间振荡）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3155,8 +2931,7 @@
     "id": "H03",
     "description": {
       "purpose": "考三链独立正确＋漏签盯办：①真实考试冲突缓考（201/302 同日 6/24 09:00 同时段）②窗口内退课 ③中文成绩单申请——缺一即 DB 不匹配；学生漏签缓考单，agent 须逐个盯完。",
-      "relevant_policies": "政策第12条（冲突缓考考前一日截止）、第7条（窗口内退课）、第30条（3 个工作日出具）、tools-spec §5 缓考链时序。",
-      "notes": "initial_state：OF-2026SP-805-1（创新创业基础）窗口开至 2026-06-24 23:59（教务办补开局面）。该生 2026SP：EN-0094 程序设计基础（EX-0041 6/24 09:00）、EN-0095 计算机网络（EX-0043 6/24 09:00）——真实同日同时段冲突；EN-0096 创新创业。金标（编号=种子 max+1）：submit_deferral(302,EX-0043,冲突,考前正常)→DF-007+SIG-017+TODO-017；drop EN-0096；request_certificate(中文成绩单)→CE-007；学生 confirm(SIG-017)→SUBMITTED→settle→通过。断言四链：DF-007 通过、EN-0096 已退课、SIG-017 已确认、certificate_count=1。communicate='已退课'+'通过'。"
+      "relevant_policies": "政策第12条（冲突缓考考前一日截止）、第7条（窗口内退课）、第30条（3 个工作日出具）、tools-spec §5 缓考链时序。"
     },
     "user_scenario": {
       "persona": "配合型（带忘事元素）：三件事一起办，缓考签署单先拖着不签，被 Agent 点名提醒才去签；对 Agent 提议代办=顺从完成签署动作。",
@@ -3292,15 +3067,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H03-i1",
-        "title": "新增行编号可预测性",
-        "description": "DF-007/SIG-017/TODO-017/CE-007=种子 max+1 运行时创建；verify_s3b 重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3310,9 +3076,8 @@
   {
     "id": "H04",
     "description": {
-      "purpose": "考 P01 窗口＋名额波动＋终态判分：中途 drop 不算错，判分只看 EN 终态=已选（单终态）；两次 enroll 用新行、drop 的行留'已退课'。",
-      "relevant_policies": "政策第7条（窗口内补退选即时生效）；tools-spec enroll/drop。",
-      "notes": "initial_state：OF-2026SP-601-1（工程制图，25 座当前 0 人、无先修、周五 14:00 无冲突）窗口开至 2026-06-20 23:59。金标（编号=种子 max+1，同沙盒内连续）：enroll→EN-0435 已选（0→1）；drop EN-0435→已退课（1→0）；再 enroll→EN-0436 已选（0→1）。断言：EN-0435=已退课、EN-0436=已选（单终态）。communicate='工程制图'+'已选'。"
+      "purpose": "考 窗口＋名额波动＋终态判分：中途 drop 不算错，判分只看 EN 终态=已选（单终态）；两次 enroll 用新行、drop 的行留'已退课'。",
+      "relevant_policies": "政策第7条（窗口内补退选即时生效）；tools-spec enroll/drop。"
     },
     "user_scenario": {
       "persona": "深度改主意型：补选→反悔退→再反悔要回；反悔节奏由题面钉死，单终态=已选（v1.1/F3）；对 Agent 提议'顺其自然别再选'顺从=否（坚持要回）。",
@@ -3417,15 +3182,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H04-i1",
-        "title": "新增行编号可预测性",
-        "description": "EN-0435/EN-0436=种子 max+1 顺序创建（enroll→drop→enroll）；verify_s3b 重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -3435,8 +3191,7 @@
     "id": "H05",
     "description": {
       "purpose": "考第4条数据边界拒绝＋本职查询正确：代查他人成绩必须拒（E-DATA-BOUNDARY 不实现（v1.1/F5），拒绝由 agent 政策遵从承担）；本人课表查询必须给出正确结果。",
-      "relevant_policies": "政策第4条（数据边界：代查一律拒绝、可建议书面授权走线下）、第2条无关。",
-      "notes": "零写题（golden actions 空；读操作不入 actions 与 E01/E09 同构）。communicate='书面授权'（第4条原文实体）+'翻译基础'（本人 2026SP 课表实体，get_enrollments 返回课程名）。若 agent 违规调用 get_grades(他人)——读操作不改库、DB 哈希仍与金标一致，但 communicate 的'书面授权'会缺失→COMMUNICATE 挂，判别有效。；S3A-2 修复：agent 多轮以英文答复，'书面授权'被译为 written authorization，judge 判 miss；换为 get_enrollments 必现实体 EN-0383（行号）。"
+      "relevant_policies": "政策第4条（数据边界：代查一律拒绝、可建议书面授权走线下）、第2条无关。"
     },
     "user_scenario": {
       "persona": "较真型：拿'小组作业要用'顶；边界依据讲死后接受；顺从维度=拒绝代查结论后顺从，不换理由再磨。",
@@ -3482,15 +3237,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H05-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-2: 拒绝叙述的中文条款词在 agent 英文答复下不可判，communicate 改 ['翻译基础','EN-0383']；数据边界拒绝行为由零写哈希承载。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -3499,9 +3245,8 @@
   {
     "id": "H06",
     "description": {
-      "purpose": "考 P07 特别通道边界（条款择优）：毕业班窗口外退课走特别通道（SIG+双重程序→已退课）；补选新课不适用特别通道、窗口亦已过——通道只解决退改不解决补选。",
-      "relevant_policies": "政策第9条（毕业班特别通道：窗口关闭后 10 个工作日内、学院+教务处双重程序、仅退课与调整、不用于新课程补选，P07）、第7条（窗口）。",
-      "notes": "种子局面：S20220101 is_graduating_cohort=true、EN-0011 操作系统已选（另一门 EN-0014 在特别通道审核中属 M10 局面，本题不触碰）；锚点 6/12 窗口已过（3/15）。金标（编号=种子 max+1）：drop_course(EN-0011)→SIG-017 特别通道审批单+EN-0011 特别通道审核中；学生 confirm(SIG-017)→送审→settle 无替代开课→已退课（drop_channel=特别通道、OF-301 8→7）。断言：EN-0011=已退课、SIG-017=已确认。新课补选请求=零写拒绝。communicate='特别通道'+'已退课'。"
+      "purpose": "考 特别通道边界（条款择优）：毕业班窗口外退课走特别通道（SIG+双重程序→已退课）；补选新课不适用特别通道、窗口亦已过——通道只解决退改不解决补选。",
+      "relevant_policies": "政策第9条（毕业班特别通道：窗口关闭后 10 个工作日内、学院+教务处双重程序、仅退课与调整、不用于新课程补选）、第7条（窗口）。"
     },
     "user_scenario": {
       "persona": "较真型：拿'都是特殊通道'混为一谈；通道边界讲死后接受；顺从维度=接受撤/不补的边界，不强求代办补选。",
@@ -3518,7 +3263,7 @@
       "initialization_data": {
         "agent_data": {
           "env": {
-            "current_time": "2026-06-12 10:00"
+            "current_time": "2026-03-20 10:00"
           }
         },
         "user_data": null
@@ -3588,15 +3333,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H06-i1",
-        "title": "新增行编号可预测性",
-        "description": "SIG-017=种子 max+1 运行时创建（特别通道审批单不带 deadline，D-S2A-5）；verify_s3b 重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3607,8 +3343,7 @@
     "id": "H07",
     "description": {
       "purpose": "考第33条委托代领授权闭环：授权签署（SIG）＋受托人证件影像（UP）缺一不可；出具已到期的证明在授权完成后即可领取；授权码 30 日有效。",
-      "relevant_policies": "政策第33条（代领授权签署+证件影像、授权码 30 日、无授权不予交付）、第30条（出具时效）。",
-      "notes": "initial_state 预置可预测新行（种子 max：CE-006/SIG-016/TODO-016）：① CE-007=该生 6/5 申请的在读证明（delivery=委托代领、status=待签署、applied_at=2026-06-05 09:00、ready_at=2026-06-10 09:00=第30条+3 工作日、proxy_info{proxy_name=韩卫东,id_masked=****4471,auth_sig_id=SIG-017,valid_until=2026-07-04 09:00}）；② user_data：SIG-017（代领授权书→待确认，无 deadline 同引擎口径）、TODO-017（证明代领授权→待处理）。金标：学生 upload_material(certificates,CE-007,'身份证件影像','受托人身份证.jpg')→UP-005；学生 confirm(SIG-017)→CE 制作中→settle：now(6/12)≥ready_at(6/10)→可领取+verify_code 生成。断言：certificate_count=1、SIG-017=已确认、UP-005=已上传。communicate='可领取'+'委托代领'（状态与 delivery 实体）。蓝图'UP 证件核验'按实装语义为'已上传'（证书侧结算不核验 UP 行），见 handoff 决策日志。"
+      "relevant_policies": "政策第33条（代领授权签署+证件影像、授权码 30 日、无授权不予交付）、第30条（出具时效）。"
     },
     "user_scenario": {
       "persona": "忘事型：授权手续拖着没办、记不清申请到哪步；需 Agent 点名到具体单据；顺从维度=按指引上传+签署顺从完成。",
@@ -3757,15 +3492,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H07-i1",
-        "title": "新增行编号可预测性",
-        "description": "CE-007/SIG-017/TODO-017=种子 max+1 预置行、UP-005 运行时创建；verify_s3b 逐题重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3776,9 +3502,8 @@
   {
     "id": "H08",
     "description": {
-      "purpose": "考 P13 按课程计数：A 课（操作系统）本学期缓考额度已用（通过），B 课（创新创业）同日同时段真实冲突可办；A 再补一次被拒要精准到课。",
-      "relevant_policies": "政策第12条（冲突缓考考前一日截止）、第13条（同一课程同一学期仅一次、驳回不得再申请、已撤回不占额度 v1.1/F1）、第18条。",
-      "notes": "initial_state 预置可预测新行＋改已有行（种子 max：DF-006/SIG-016/TODO-016/EX-0058）：① DF-007=该生《操作系统》本学期冲突缓考已通过（submitted 2026-06-10、reviewed 同日、deadline 2026-06-22 23:59、proof 空、hospital=无）；② SIG-017（缓考申请单→已确认）、TODO-017（缓考申请签署→已完成）；③ EX-0034（操作系统 期末 6/23）status=已缓考；④ EX-0045（创新创业 6/26 09:00）与她未缓考的 EX-0049（算法设计 6/26 09:00）构成真实同时段冲突（B 的冲突理由成立）。金标：submit_deferral(805,EX-0045,冲突,考前正常)→DF-008+SIG-018+TODO-018；学生 confirm(SIG-018)→settle→通过。A 再申请=零写拒绝（E-DEFERRAL-USED）。断言：DF-008=通过、DF-007=通过、SIG-018=已确认。communicate='仅一次'+'通过'（第13条原文实体+状态实体）。；S3A-2 修复：'仅一次'非连续子串（agent 写'仅可申请一次'），且属叙述性字串违 D-S3A-6；换为工具必现单号 DF-007（题面剧本强制念两单状态）。"
+      "purpose": "考 按课程计数：A 课（操作系统）本学期缓考额度已用（通过），B 课（创新创业）同日同时段真实冲突可办；A 再补一次被拒要精准到课。",
+      "relevant_policies": "政策第12条（冲突缓考考前一日截止）、第13条（同一课程同一学期仅一次、驳回不得再申请、已撤回不占额度 v1.1/F1）、第18条。"
     },
     "user_scenario": {
       "persona": "较真型：拿'B 合法所以 A 也该行'顶；拒绝须精准到课；顺从维度=接受'只办 B'的裁剪，不强求 A 复议。",
@@ -3929,22 +3654,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H08-i1",
-        "title": "新增行编号可预测性",
-        "description": "预置 DF-007/SIG-017/TODO-017=种子 max+1；运行时 DF-008/SIG-018/TODO-018顺延至 +2；verify_s3b 逐题重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H08-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-3: '仅一次'改 'DF-007'；额度按课程计的讲解行为不判分。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3954,9 +3663,8 @@
   {
     "id": "H09",
     "description": {
-      "purpose": "考 P08 递补确认时序＋第5条学分意识：递补确认单 6/12 18:00 到期（当日死线）、退课窗口 6/20 内随时可退——先后次序由 Agent 提醒钉死；金标按'先退后签'学生意愿执行（题面钉死单通道，防两种时序抽签）。",
-      "relevant_policies": "政策第8条（候补递补 24 小时确认、顺位递补）、第5条（学分上限语境）、第7条（窗口内退课）。",
-      "notes": "initial_state：OF-2026SP-301-1（操作系统）窗口开至 2026-06-20 23:59。种子在途局面：EN-0070（该生候补《人工智能导论》位次 1）+SIG-015 递补确认单（created 2026-06-11 18:00、deadline 2026-06-12 18:00，锚点 10:00 当日仍有效）。金标：drop EN-0067（操作系统，窗口内即时生效）→学生 confirm(SIG-015)→EN-0070 正式选课（source=候补递补、OF-402 计数+1；递补无容量复查为实装语义，双侧同规则）。断言：EN-0067=已退课、EN-0070=已选、SIG-015=已确认。communicate='人工智能导论'+'已选'。"
+      "purpose": "考 递补确认时序＋第5条学分意识：递补确认单 6/12 18:00 到期（当日死线）、退课窗口 6/20 内随时可退——先后次序由 Agent 提醒钉死；金标按'先退后签'学生意愿执行（题面钉死单通道，防两种时序抽签）。",
+      "relevant_policies": "政策第8条（候补递补 24 小时确认、顺位递补）、第5条（学分上限语境）、第7条（窗口内退课）。"
     },
     "user_scenario": {
       "persona": "绕弯型：口述含糊、顺序有执念（想先退后签）；顺从维度=对 Agent 的时序提醒顺从（先签 24h 死线单再退课）。",
@@ -4058,7 +3766,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -4068,9 +3775,8 @@
   {
     "id": "H10",
     "description": {
-      "purpose": "考 P03 立场（逾期不受理查分）与咨询/申诉边界（D-S1B-4/v1.1 F2：咨询可建、不得以申诉替代）：唯一允许写入=一张咨询工单，若生成申诉工单或任何成绩变更，DB 双哈希必挂。",
-      "relevant_policies": "政策第15、16条（v1.1 F2 说明句）、第35条；tools-spec create_ticket 预检仅拦'申诉+成绩+逾期'。",
-      "notes": "基线局面：曹牧之 2025FA 各科 recorded_at=2026-01-23，锚点 2026-06-12 查分窗口（5 工作日）早已过——天然逾期，无需窗口覆写。目标终态：TK 新增（咨询/成绩/学院/待处理），promised_reply_at=+2 工作日。学生先要求建申诉工单/改成绩（Agent 若尝试会收 E-REVIEW-EXPIRED，被拒写不改 DB、仍零残留）。自由文本转写口径同 M20。"
+      "purpose": "考 立场（逾期不受理查分）与咨询/申诉边界（D-S1B-4/v1.1 F2：咨询可建、不得以申诉替代）：唯一允许写入=一张咨询工单，若生成申诉工单或任何成绩变更，DB 双哈希必挂。",
+      "relevant_policies": "政策第15、16条（v1.1 F2 说明句）、第35条；tools-spec create_ticket 预检仅拦'申诉+成绩+逾期'。"
     },
     "user_scenario": {
       "persona": "情绪化：嗓门大、威胁曝光、把'系统 bug'说成事实；但依据讲死、给出台阶后会软下来转成务实请求。",
@@ -4131,7 +3837,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4140,9 +3845,8 @@
   {
     "id": "H11",
     "description": {
-      "purpose": "考 P05/P09×第29条两头答对：'缓不算挂科'≠'够排名门槛'——缓字课学分不计入评定 GPA/已修学分、排名口径以教务处当期计算表为准；零写。",
-      "relevant_policies": "政策第24条（申请条件）、第29条（评定截止日仍为'缓'的课程学分不计入评定、排名口径以教务处当期公布的计算表为准）、第17条（'缓'不计入 GPA）。",
-      "notes": "initial_state 将三门 2025-2026 成绩行覆写为'缓'占位（改已有行字段，形状对照 GR-0055 缓行：grade_level=缓、score=null、gpa_points=null、is_final=false）：GR-0090/0091/0092（高等数学A(下)/程序设计基础/离散数学）；GR-0093/0094 保持 A。无挂科警示处分→第24条形式条件全过（陷阱=第29条学分口径，非资格拒绝）。零写判分＝两库哈希不变＋communicate='不计入'+'计算表'（第29条原文实体）。金标零写：agent 不得代提交（学生被说服等成绩出）。"
+      "purpose": "考 第29条两头答对：'缓不算挂科'≠'够排名门槛'——缓字课学分不计入评定 GPA/已修学分、排名口径以教务处当期计算表为准；零写。",
+      "relevant_policies": "政策第24条（申请条件）、第29条（评定截止日仍为'缓'的课程学分不计入评定、排名口径以教务处当期公布的计算表为准）、第17条（'缓'不计入 GPA）。"
     },
     "user_scenario": {
       "persona": "绕弯型：口述含糊、拿'缓不算挂科'半截口径顶；顺从维度=听到两头口径后顺从'先不提交'的建议（不逼 Agent 代办）。",
@@ -4208,7 +3912,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4217,9 +3920,8 @@
   {
     "id": "H12",
     "description": {
-      "purpose": "考 P12×第30条结账边界：最后工作日 16:50 提交（17:00 结账前）受理成功、但当日下班前拿不到纸质件（出具需 3 个工作日）——两个时限必须分别说清。",
-      "relevant_policies": "政策第31条（月末最后工作日 17:00–22:00 结账、结账前受理自动顺延，P12）、第30条（电子 3 个工作日出具、纸质领取）。",
-      "notes": "initial_state：current_time=2026-06-30 16:50（6 月最后工作日周二、结账前 10 分钟）。金标=request_certificate(在读证明, delivery=人工领取)→CE-007 制作中、ready_at=2026-07-03 16:50（add_workdays(6/30 16:50,3)=7/1、7/2、7/3）。断言 certificate_count=1。communicate='2026-07-03'（ready_at 日期实体）+'结账'（第31条/E-CERT_BATCH 文案实体）。"
+      "purpose": "考 第30条结账边界：最后工作日 16:50 提交（17:00 结账前）受理成功、但当日下班前拿不到纸质件（出具需 3 个工作日）——两个时限必须分别说清。",
+      "relevant_policies": "政策第31条（月末最后工作日 17:00–22:00 结账、结账前受理自动顺延）、第30条（电子 3 个工作日出具、纸质领取）。"
     },
     "user_scenario": {
       "persona": "情绪化型：嗓门大、拿'今天必须拿到'施压；两个时限分别讲清后转务实；顺从维度=接受'来得及提交、来不及领取'的裁剪。",
@@ -4288,7 +3990,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4297,9 +3998,8 @@
   {
     "id": "H13",
     "description": {
-      "purpose": "考四合一连环拒绝的精准性：P05（学年内两门 F＋警示在身→评奖拒，重修'正在修'不消除）、P14（转专业仅一次→拒并给辅修/双学位建议）、P03（成绩 1/23 公布逾期查分→拒）——拒三条的同时必须给出一条合法出路（下一轮评定路径），全题零写。",
-      "relevant_policies": "政策第16、19、20、21、24条；第20条替代路径（辅修/双学位）。",
-      "notes": "initial_state 仅置 students.S20230301.major_change_used=true（其余皆种子自然态：warning_records 2025FA 单学期不及格学分≥8；GR-0193 高数A(下) F、GR-0194 材料力学 F 均在 2025-2026 学年、recorded 2026-01-23；EN-0292/0293 本学期重修在读）。AW-005 二等人民奖学金窗口 2026-06-19 止（窗口不构成拒绝理由）。判分＝两库哈希不变＋条款子串。；S3A-2 修复：三条'第N条'字串全部带空格判 miss；换三个稳定实体（奖名/业务名/渠道名），4/4 trial 全部逐字回传验证过。"
+      "purpose": "考四合一连环拒绝的精准性：（学年内两门 F＋警示在身→评奖拒，重修'正在修'不消除）、（转专业仅一次→拒并给辅修/双学位建议）、（成绩 1/23 公布逾期查分→拒）——拒三条的同时必须给出一条合法出路（下一轮评定路径），全题零写。",
+      "relevant_policies": "政策第16、19、20、21、24条；第20条替代路径（辅修/双学位）。"
     },
     "user_scenario": {
       "persona": "较真：三连问逐条顶嘴，对每条拒绝都举反例（'可我正在重修''找学院特批''让教务帮我调卷子'），直到出路讲明白。",
@@ -4351,15 +4051,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H13-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-8: communicate 改 ['人民奖学金','转专业','查分']；三项拒绝行为由零写哈希+渠道讲解承载。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4368,9 +4059,8 @@
   {
     "id": "H14",
     "description": {
-      "purpose": "考超范围双拒：①'直接改系统成绩'违反第15条（更正只能任课教师发起，学生端只有查分/申诉两条）；②绕开缓考时限提交被 P02 拦（考试 6/5 已完成、补办 3 工作日6/10 截止，锚点 6/12 已逾期）——拒改成绩≠拒讲流程。",
-      "relevant_policies": "政策第15条（成绩更正仅任课教师发起、学生异议渠道=查分+申诉）、第12条（因病考后 3 个工作日）、第18条（放弃课程按'缺'记载）。",
-      "notes": "initial_state 将 EX-0041（程序设计基础 期末）覆写 scheduled_at=2026-06-05 09:00、published_at=2026-05-22 09:00、status=已完成——因病补办截止 2026-06-10 23:59，锚点 6/12 已逾期（E-DEFERRAL-EXPIRED 路径零写入）。他的 GR-0066（程序设计基础 F，2025-2026）即'想改的成绩'。零写判分＝两库哈希不变＋communicate='任课教师'+'缺'（第15条原文实体与第18条记载实体）。；S3A-2 修复：局面数据里成绩已出（GR-0066 F 已公布），agent 合规叙事='已出成绩无法补缓考+查分/申诉渠道'，从不引申第18条'将按缺记载'；原'缺'字串与局面冲突。换'查分'（剧本强制问渠道）。"
+      "purpose": "考超范围双拒：①'直接改系统成绩'违反第15条（更正只能任课教师发起，学生端只有查分/申诉两条）；②绕开缓考时限提交被拦（考试 6/5 已完成、补办 3 工作日6/10 截止，锚点 6/12 已逾期）——拒改成绩≠拒讲流程。",
+      "relevant_policies": "政策第15条（成绩更正仅任课教师发起、学生异议渠道=查分+申诉）、第12条（因病考后 3 个工作日）、第18条（放弃课程按'缺'记载）。"
     },
     "user_scenario": {
       "persona": "绕弯型：口述含糊、拿'通融一下'绕；两个超范围诉求分别讲死后接受；顺从维度=两轮后顺从收尾，不换说法再绕。",
@@ -4423,15 +4113,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H14-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-6: '缺'改 '查分'；第18条叙事与已出成绩局面冲突属任务面设计缺陷。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4441,8 +4122,7 @@
     "id": "H15",
     "description": {
       "purpose": "考四链独立正确＋撤回语义（第30条出具前撤回留行不出具，v1.1/F4）：①递补确认（24h 死线内）②因病缓考考后补办（学生忘传材料→如实停在'待材料'）③英文成绩单申请→中途撤回（留行已撤回）④窗口内成绩申诉工单（v1.3 时态边界在位）。",
-      "relevant_policies": "政策第8条（递补 24h）、第12条（因病考后 3 工作日）、第30条（出具前撤回）、第16条（查分窗口内可径按第34条申诉，v1.3/R4 边界句）、第34/35条（申诉工单）；tools-spec withdraw_application(kind=certificate)。",
-      "notes": "initial_state 覆写两行（改已有行字段）：① EX-0044（数据库系统 期末）scheduled_at=2026-06-10 09:00、published_at=2026-05-27 09:00、status=已完成（考后第 3 工作日=6/15，锚点 6/12 在窗内）；② GR-0044（计算机网络，2025-2026）recorded_at=2026-06-08 09:00（查分/申诉窗口内：截止 6/15 23:59）。种子在途局面：EN-0070 候补位次 1+SIG-015（deadline 2026-06-12 18:00，锚点 11:00 有效）。金标（编号=种子 max+1）：confirm(SIG-015)→EN-0070 已选；submit_deferral(303,EX-0044,因病,考后补办)→DF-007+SIG-017+TODO-017/018；学生 confirm(SIG-017)（忘传材料）→SUBMITTED→settle→待材料（如实报告分支，D-S2IC-3 钉死其一）；request_certificate(英文成绩单,英)→CE-007 制作中；agent withdraw_application(certificate,CE-007)→已撤回（留行不出具）；create_ticket(申诉,成绩,口述钉死)→TK-006（recorded_at 窗口内受理）。断言：EN-0070=已选、DF-007=待材料、SIG-015/017=已确认、assert_ticket_exists(title)（CE-007 已撤回由 DB 双哈希承载）。communicate='已撤回'+'诊断证明'（D-S3A-6 实证：冒烟中 agent 转述缺料用'缺诊断证明'而非状态字面'待材料'，改挂工具必现材料实体）。"
+      "relevant_policies": "政策第8条（递补 24h）、第12条（因病考后 3 工作日）、第30条（出具前撤回）、第16条（查分窗口内可径按第34条申诉，v1.3/R4 边界句）、第34/35条（申诉工单）；tools-spec withdraw_application(kind=certificate)。"
     },
     "user_scenario": {
       "persona": "忘事+改主意型：四链并发、材料忘传；中途反悔撤掉成绩单（对 Agent 撤回提议顺从=是）；签署动作主动完成、材料回避。",
@@ -4544,7 +4224,7 @@
             "kind": "certificate",
             "record_id": "CE-007"
           },
-          "info": "CE-007→已撤回（出具前撤回、留行不出具 v1.1/F4）",
+          "info": "CE-007→已撤回（出具前撤回、留行不出具）",
           "compare_args": null
         },
         {
@@ -4619,36 +4299,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H15-i1",
-        "title": "新增行编号可预测性",
-        "description": "运行时 DF-007/SIG-017/CE-007/TK-006=种子 max+1；verify_s3b 逐题重放校验；CE-007 撤回与 H07 的预置 CE-007 分属独立沙盒。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H15-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-13: ①递补签署显式动作化+窗口质疑顶回话术+'非④工单不建'（r1 t0/t1 递补链断裂：agent 过度否证窗口矛盾致用户未签 SIG-015，2/4）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H15-s3a2-r3",
-        "title": "S3A-2 r3 定向修复",
-        "description": "开场第一句强制报学号（r2 四轮用户未报学号→agent 幻觉他人学号 S20230102 替别人办事→SIG-017 不属于本人不可签）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H15-s3a2-r4",
-        "title": "S3A-2 r4 定向修复",
-        "description": "递补签署改用户自办不问 agent+第一句话以学号开头+不与 agent 谈递补状态（r1 窗口否证/r2-r3 错学号替办，双故障源消除）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
