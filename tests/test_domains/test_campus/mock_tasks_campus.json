@@ -3,7 +3,7 @@
     "id": "mock_query_1",
     "description": {
       "purpose": "纯查询零写：学生核对本学期期末考试安排与上一学期《数据结构》成绩。考读工具与如实转述。",
-      "notes": "S2A 冒烟题①。DB 分量＝无写即两库哈希不变；COMMUNICATE＝实体串。"
+      "notes": "冒烟题①：纯查询零写——DB 分量＝无写即两库哈希不变；COMMUNICATE＝实体串。"
     },
     "user_scenario": {
       "persona": null,
@@ -36,7 +36,7 @@
     "id": "mock_deferral_2",
     "description": {
       "purpose": "缓考 dual-control（冲突类）：Agent 申报→学生小程序签署→环境结算通过、考试置已缓考。",
-      "notes": "S2A 冒烟题②。金标 actions 含 user 写（铁律：user 写必进 actions，否则 DB 双哈希必挂）。ENV_ASSERTION 精断终态。"
+      "notes": "冒烟题②：金标 actions 含 user 写（user 写必进 actions，否则 DB 双哈希必挂）；ENV_ASSERTION 精断终态。"
     },
     "user_scenario": {
       "persona": null,
@@ -70,8 +70,8 @@
   {
     "id": "mock_refuse_3",
     "description": {
-      "purpose": "拒绝零写（P03 逾期查分+申诉替代拦截，v1.1-F2）：学生坚持要申诉工单，Agent 应据第16条拒绝且不建任何工单。",
-      "notes": "S2A 冒烟题③。user_scenario 钉死零写终态（不答应建咨询工单）；COMMUNICATE 实体串取政策第16条高频转述短语'查分时限'（教训：工具错误文案易被 agent 改述，S2B 选材须取必然逐字片段）。"
+      "purpose": "拒绝零写（逾期查分超窗＋申诉不能替代查分）：学生坚持要申诉工单，Agent 应据第16条拒绝且不建任何工单。",
+      "notes": "冒烟题③：user_scenario 钉死零写终态（不答应建咨询工单）；COMMUNICATE 实体串取政策第16条必然逐字出现的短语'查分时限'（工具错误文案易被 agent 改述，选材须取必然逐字片段）。"
     },
     "user_scenario": {
       "persona": null,

@@ -1,4 +1,4 @@
-"""campus 域 user 侧数据模型（学生小程序数据）— 由 contract/models.py v1.1 移植（S2A）。
+"""campus 域 user 侧数据模型（学生小程序数据）。
 
 dual-control 的本质：Agent 侧 WRITE 只能**生成** pending_signatures 行，不能翻其状态；
 材料上传（uploads）与签署确认只发生在 user 库。user 写动作全部须进

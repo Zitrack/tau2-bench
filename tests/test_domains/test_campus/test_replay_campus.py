@@ -1,6 +1,6 @@
-"""Campus replay-determinism tests (S2A T11).
+"""Campus replay-determinism tests.
 
-Covers campus-domain-plan T11 + tools-spec §5 dual-hash rule:
+Covers the dual-hash determinism rule:
 - strict_replay round-trip: a trajectory of agent/user writes (incl. rejected
   writes and time jumps) replays content-identical on a fresh environment;
 - initial_state override path (agent_data/user_data incl. "student_id" binding
@@ -110,7 +110,7 @@ class TestStrictReplay:
 class TestGoldVsPredicted:
     def test_gold_replay_of_write_subset_matches_full_trajectory(self):
         """金标环境只重放 evaluation actions（写序列），预测环境重放整条轨迹——
-        无多余写时两库哈希全等（DB 分量口径，tools-spec §5/v1.1-F7）。"""
+        无多余写时两库哈希全等（DB 分量口径）。"""
         env = get_environment()
         env.set_state(None, [BIND], [])
         full_msgs = history(env, TRAJ)
@@ -126,7 +126,7 @@ class TestGoldVsPredicted:
         assert predicted.get_user_db_hash() == gold.get_user_db_hash()
 
     def test_extra_user_write_breaks_db_equality(self):
-        """S1A 坑①复现防线：预测侧多一个用户写（金标未含）→ user 库哈希必须不等。"""
+        """复现防线：预测侧多一个用户写（金标未含）→ user 库哈希必须不等。"""
         env = get_environment()
         env.set_state(None, [BIND], [])
         steps = WRITE_STEPS + [("user", "check_student_app", {}),
