@@ -59,7 +59,7 @@ Dataset (tasks / policy / seed DBs): [huggingface.co/datasets/ZitrackHF/tau2-zh-
 
 ## License & credits
 
-Code and domain content released under the upstream **MIT license**. τ²-bench by Sierra Research ([upstream repo](https://github.com/sierra-research/tau2-bench), paper: [*τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment*](https://arxiv.org/abs/2506.07982)). All institutions, people, and records in the campus domain are fictional ("青川大学 / Qingchuan University"); policy material is rewritten and de-identified from public regulations.
+Code and domain content released under the upstream **MIT license**. τ²-bench by Sierra Research ([upstream repo](https://github.com/sierra-research/tau2-bench), paper: [*τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment*](https://arxiv.org/abs/2506.07982)). All institutions, people, and records in the campus domain are fictional ("Qingchuan University"); policy material is rewritten and de-identified from public regulations.
 
 ---
 
