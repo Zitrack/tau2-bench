@@ -8,7 +8,7 @@
 `campus` is a natively designed **Chinese** domain for university academic-affairs service (course add/drop, exam deferrals, grade review & appeals, scholarships and aid, certificate issuing, student-status and tickets). It is *not* a translation: policy, database, tasks, and user personas are all written for the Chinese higher-education setting, while the scoring protocol stays exactly on the official τ²-bench v1.0.1 track (`reward_basis = [DB, COMMUNICATE]` + `env_assertions`; `RewardType.ACTION` not used), so results read directly against the official leaderboard conventions.
 
 - **Policy**: `data/tau2/domains/campus/policy.md` — a 36-article service regulation for the fictional university, deliberately packed with time-boundary traps (the add-drop window, deferral deadlines, the maintenance window, month-end settlement, tiered appeals…).
-- **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **17 refusal tasks** (privacy, skipping appeal levels, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
+- **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **29 zero-write tasks (of which 20 carry explicit refusal semantics)** (privacy, skipping appeal levels, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
 - **Data**: `db.json` (14 tables) + `user_db.json` (students act through their own app).
 - **Tests**: `tests/test_domains/test_campus/` — 147 pytest cases (tools, replay, contract, full 50-task gold-replay CI, deadline-guard matrix, state-machine invariants).
 
@@ -48,7 +48,7 @@ All numbers are recomputed programmatically from `results.json` (never hand-copi
 5. Non-cooperative personas are fixed across all tested models (per-task scripted in `tasks.json` + `personas`).
 6. seed=20261004, temperature=0 (agent/user/judge), max_steps=60 for every run.
 
-Scoring-contract note: all 50 tasks ship `reward_basis=[DB, COMMUNICATE]` (the upstream default); the 53 `env_assertions` across 25 tasks are diagnostic outputs (reported in `RewardInfo.env_assertions`) and do not gate the reward, per the official v1.0.1 contract (docs/evaluation.md).
+Scoring-contract note: all 50 tasks ship `reward_basis=[DB, COMMUNICATE]` (the upstream default); the 54 `env_assertions` across 25 tasks are diagnostic outputs (reported in `RewardInfo.env_assertions`) and do not gate the reward, per the official v1.0.1 contract (docs/evaluation.md).
 
 **Grading (judge) statement**: COMMUNICATE items use **deterministic substring matching** against the agent's full reply text (no whitespace/full-width normalization); DB items use terminal-state hash comparison; both must pass. The `deepseek-flash` model only writes justification text — the met/not-met decision is fully reproducible by rule (530/530 in calibration). Paraphrases may therefore score as misses; ~60% of misses in the audited population are such string-level engineering noise rather than capability failures.
 
@@ -118,7 +118,7 @@ Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.0798
 
 ## 1. 域概要
 
-`campus` 是为中文高校教务场景**原生设计**（非翻译）的域：选课/补退选、考试缓考、成绩查分与申诉、奖助学金、证明开具、学籍与工单。政策（36 条，含补退选窗口、缓考时限、维护窗口、月末结账、逐级申诉等时限坑）、数据库（14 表）、50 题任务（easy 15 / medium 20 / hard 15，含 17 道拒绝题）与 persona 全部中文原生；判分口径与官方同构（`[DB, COMMUNICATE]` + `env_assertions`，不用 ACTION），结果可与官方榜单同读。
+`campus` 是为中文高校教务场景**原生设计**（非翻译）的域：选课/补退选、考试缓考、成绩查分与申诉、奖助学金、证明开具、学籍与工单。政策（36 条，含补退选窗口、缓考时限、维护窗口、月末结账、逐级申诉等时限坑）、数据库（14 表）、50 题任务（easy 15 / medium 20 / hard 15，含 29 道零写任务，其中 20 道具有明确拒绝语义）与 persona 全部中文原生；判分口径与官方同构（`[DB, COMMUNICATE]` + `env_assertions`，不用 ACTION），结果可与官方榜单同读。
 
 ## 2. 双控设计
 
@@ -156,7 +156,7 @@ Pass^1＝通过 trial 占比（共 200）；pass^4＝4/4 全过的题数（共 5
 5. 非合作 persona 在全部被测模型间固定（`tasks.json` + persona 逐题脚本）。
 6. 每次运行均为 seed=20261004、temperature=0（agent/user/judge）、max_steps=60。
 
-判分契约说明：50 题 reward_basis 均为 [DB, COMMUNICATE]（上游默认）；25 题的 53 条 env_assertions 为诊断性输出（见 RewardInfo.env_assertions），不计入 reward 判分，与官方 v1.0.1 文档契约一致。
+判分契约说明：50 题 reward_basis 均为 [DB, COMMUNICATE]（上游默认）；25 题的 54 条 env_assertions 为诊断性输出（见 RewardInfo.env_assertions），不计入 reward 判分，与官方 v1.0.1 文档契约一致。
 
 **判分（judge）声明**：COMMUNICATE 项对 agent 全程回复文本做**确定性子串匹配**（空格/全半角不归一化）；DB 项为终态哈希比对；两项须同时通过。deepseek-flash 只产出判定文本——met/not-met 完全可由规则复现（校准 530/530）。改述因此可能记 MISS；母体约 60% MISS 属字面工程噪声而非能力失败。
 
