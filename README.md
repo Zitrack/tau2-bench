@@ -14,7 +14,7 @@
 - **Dual-control environment** — the simulated *student* operates their own campus-app tools (upload documents, confirm/sign); the agent can only **guide**, hitting τ²'s core finding that guiding a user is harder than acting alone.
 - **50 tasks** (15 easy / 20 medium / 15 hard, incl. 17 refusal tasks scored by zero-DB-write), a seeded 14-table database, 15 agent tools + 4 student tools, all-Chinese error messages.
 - **Deterministic scoring** — DB dual-hash (agent + user sides) + entity-substring checks; no LLM judge in the reward path.
-- **137 tests** covering the error catalog, state machines, deadline-guard matrix, and a **50-task gold-replay CI** (any exception or invariant violation fails the suite; countermeasure aligned with upstream #499).
+- **141 tests** covering the error catalog, state machines, deadline-guard matrix, and a **50-task gold-replay CI** (any exception or invariant violation fails the suite; countermeasure aligned with upstream #499).
 
 ## Leaderboard — 5 LLMs × 50 tasks × 4 trials (= 200 simulations per model)
 
@@ -38,7 +38,7 @@ Full protocol, judge calibration (132-sample human study), and failure typology:
 
 ```bash
 uv sync
-pytest tests/test_domains/test_campus          # 137 tests
+pytest tests/test_domains/test_campus          # 141 tests
 uv run tau2 run --domain campus --agent llm_agent \
   --agent-llm <provider>/<model> \
   --user user_simulator --user-llm deepseek/deepseek-flash \
@@ -68,7 +68,7 @@ Dataset (tasks / policy / seed DBs): [huggingface.co/datasets/ZitrackHF/tau2-zh-
 | `dev/campus` | the exact branch the upstream PR #596 is filed from |
 | `src/tau2/domains/campus/` | domain code: `data_model / user_data_model / tools / user_tools / environment` |
 | `data/tau2/domains/campus/` | `policy.md` + `db.json` + `user_db.json` + `tasks.json` (50) + `split_tasks.json` |
-| `tests/test_domains/test_campus/` | 137 tests |
+| `tests/test_domains/test_campus/` | 141 tests |
 
 ## License & credits
 
