@@ -18,15 +18,15 @@ on:
 
 jobs:
   campus-tests:
-    # Fork-side guard: no-op once this workflow lands in the upstream repo,
-    # so sierra-research runners never pick up campus CI.
-    if: github.repository == 'Zitrack/tau2-bench'
     runs-on: ubuntu-latest
     steps:
+      # Step-level gate (not job-level): the job always runs to completion so
+      # the check reports a real conclusion instead of "skipped".
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install uv
+        if: github.repository == 'Zitrack/tau2-bench'
         # Full release tag: the repo stopped publishing floating major tags
         # after v7 (v8+ are full-semver-only).
         uses: astral-sh/setup-uv@v10.2.0
@@ -36,7 +36,13 @@ jobs:
 
       # pytest lives in the optional `dev` extra ([project.optional-dependencies]).
       - name: Install dependencies
+        if: github.repository == 'Zitrack/tau2-bench'
         run: uv sync --extra dev
 
       - name: Run campus tests
+        if: github.repository == 'Zitrack/tau2-bench'
         run: uv run pytest tests/test_domains/test_campus -q
+
+      - name: Fork-only no-op
+        if: github.repository != 'Zitrack/tau2-bench'
+        run: echo "campus CI runs on Zitrack/tau2-bench only; nothing to do here."
