@@ -50,7 +50,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -134,7 +133,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -228,7 +226,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -285,7 +282,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -347,7 +343,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -422,7 +417,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -478,7 +472,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -540,7 +533,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -597,7 +589,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -654,7 +645,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -734,7 +724,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -791,15 +780,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "E12-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-1: ready_at/代领有效期经工具面不可达，communicate 改 ['可领取','委托代领']；有效期讲解保留在题面不判分。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -856,7 +836,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -919,7 +898,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1001,15 +979,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "E15-i1",
-        "title": "新增行编号可预测性",
-        "description": "EN-0435=种子 max+1（enrollments 434）；verify_s3b 逐题重放校验；跨任务同名行属独立沙盒（E02/H04 运行时亦各自新建 EN-0435）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1072,7 +1041,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1157,7 +1125,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1230,15 +1197,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M03-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-10: 补'拒建咨询工单'顺从句（r1 t3 用户接受 agent 提议致 TK-006 写入、零写哈希被合法通道攻破）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1388,15 +1346,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M04-i1",
-        "title": "新增行编号可预测性",
-        "description": "DF-007/SIG-017/TODO-017/TODO-018/UP-005 均=种子 max+1 预置行；verify_s3b 逐题重放校验；跨任务同名行属独立沙盒。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1543,36 +1492,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M05-i1",
-        "title": "新行编号可预测性依赖 S2A 实现",
-        "description": "参考轨迹引用 DF-007/SIG-017/UP-005，要求 S2A 按表内最大编号+1 分配新主键；S3A golden run 首验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M05-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-11: 钉死'先传两件后签'顺序（r1 t3 用户先签后传，df 在首件上传即结算、UP-006 终态停留'已上传'，DB 哈希挂）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M05-s3a2-r3",
-        "title": "S3A-2 r3 定向修复",
-        "description": "医院等级字段钉'三甲'字面+communicate 换 '诊断证明'（r2 t0 等级答错→无效材料驳回；r2 t2 '三级（三甲）医院'非连续子串判 miss）",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M05-s3a2-r4",
-        "title": "S3A-2 r4 定向修复",
-        "description": "开场第一句报学号（r3 t0 agent 幻觉错学号）",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -1639,15 +1558,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M06-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-9: M06 金标翻转为零写拒绝题（拒绝题配比 16→17，报 R6）；原 UP-005'无效材料'写入链在 sim 面不可达且政策上属劣势路径。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1709,7 +1619,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1766,15 +1675,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M08-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-7: '第24条'改 '人民奖学金'；种子串早于 D-S3A-6 铁律的全量回归风险被实锤。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1831,7 +1731,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -1929,15 +1828,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M10-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-14: 开场报学号（r1 t1 agent 幻觉他人学号 S20230102=跨题污染）+时间线改'窗口内提交、双重程序已完成'消解第9条劝阻+签署改为用户无条件动作（r1 t2 agent 政策正确劝阻→用户弃签，2/4）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -2034,7 +1924,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2159,22 +2048,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M12-i1",
-        "title": "新增行编号可预测性",
-        "description": "EN-0435/SIG-017/TODO-017=种子 max+1 预置行；verify_s3b 重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M12-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-4: '已过期'改 '失效'（对齐工具字面）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2241,7 +2114,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2320,7 +2192,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2377,7 +2248,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2489,15 +2359,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M16-i1",
-        "title": "新增行编号可预测性",
-        "description": "APP-009/SIG-017/TODO-017/UP-005=种子 max+1 运行时创建；verify_s3b 逐题重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -2556,15 +2417,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M17-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-10: 补'拒建咨询工单'顺从句（r1 t0/t1 用户接受提议致 TK-006 写入，2/4 零写哈希被合法通道攻破）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2621,7 +2473,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2678,15 +2529,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M19-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-5: '体育(二)'改 '缺'；全半角标点判 miss 是 S4B 校准样本。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -2782,22 +2624,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "M20-i1",
-        "title": "工单自由文本判分风险",
-        "description": "TK 行持久化 title/content，参考轨迹要求逐字一致；S3A 统计转写失真率，必要时调整判分通道。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "M20-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-15: 建单前增加'草稿一字不差核对'节拍（r1 t1 标题多句号、t2 内容被改写扩写→DB 行哈希不一致；工单不可撤回，核对必须前置）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -3009,29 +2835,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H01-i1",
-        "title": "拒签 reason 持久化口径待 S2A 确认",
-        "description": "若 S2A 将 reject_suggestion 的 reason 写入 DB，需保证金标/预测两侧逐字一致；移交口径=不持久化。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H01-i2",
-        "title": "编号可预测性",
-        "description": "DF-007/008、SIG-017/018、UP-005 依赖表内 max+1 编号；S3A 首验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H01-s3a2-3",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-12: 上传/签署显式动作化（r1 t1/t2 用户把'按指引上传'理解为让 Agent 代传→被双控边界拒绝→断链；且谎称小程序故障求代传）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3155,22 +2958,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H02-i1",
-        "title": "新增行编号可预测性",
-        "description": "APP-009/010、SIG-017/018、TODO-017/018=种子 max+1 运行时创建；verify_s3b 逐题重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H02-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-12: 第三段签署显式动作化（r1 t0/t3 用户只说'签好了'未调 confirm_action；t3 附加 agent 在 AW-001/AW-007 间振荡）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3318,15 +3105,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H03-i1",
-        "title": "新增行编号可预测性",
-        "description": "DF-007/SIG-017/TODO-017/CE-007=种子 max+1 运行时创建；verify_s3b 重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3443,15 +3221,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H04-i1",
-        "title": "新增行编号可预测性",
-        "description": "EN-0435/EN-0436=种子 max+1 顺序创建（enroll→drop→enroll）；verify_s3b 重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -3508,15 +3277,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H05-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-2: 拒绝叙述的中文条款词在 agent 英文答复下不可判，communicate 改 ['翻译基础','EN-0383']；数据边界拒绝行为由零写哈希承载。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -3614,15 +3374,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H06-i1",
-        "title": "新增行编号可预测性",
-        "description": "SIG-017=种子 max+1 运行时创建（特别通道审批单不带 deadline，D-S2A-5）；verify_s3b 重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3783,15 +3534,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H07-i1",
-        "title": "新增行编号可预测性",
-        "description": "CE-007/SIG-017/TODO-017=种子 max+1 预置行、UP-005 运行时创建；verify_s3b 逐题重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -3955,22 +3697,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H08-i1",
-        "title": "新增行编号可预测性",
-        "description": "预置 DF-007/SIG-017/TODO-017=种子 max+1；运行时 DF-008/SIG-018/TODO-018顺延至 +2；verify_s3b 逐题重放校验。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H08-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-3: '仅一次'改 'DF-007'；额度按课程计的讲解行为不判分。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -4084,7 +3810,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
@@ -4157,7 +3882,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4234,7 +3958,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4314,7 +4037,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4377,15 +4099,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H13-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-8: communicate 改 ['人民奖学金','转专业','查分']；三项拒绝行为由零写哈希+渠道讲解承载。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4449,15 +4162,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H14-s3a2-1",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-6: '缺'改 '查分'；第18条叙事与已出成绩局面冲突属任务面设计缺陷。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app"
@@ -4645,36 +4349,6 @@
         "COMMUNICATE"
       ]
     },
-    "issues": [
-      {
-        "id": "H15-i1",
-        "title": "新增行编号可预测性",
-        "description": "运行时 DF-007/SIG-017/CE-007/TK-006=种子 max+1；verify_s3b 逐题重放校验；CE-007 撤回与 H07 的预置 CE-007 分属独立沙盒。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H15-s3a2-2",
-        "title": "S3A-2 定向修复",
-        "description": "D-S3A2-13: ①递补签署显式动作化+窗口质疑顶回话术+'非④工单不建'（r1 t0/t1 递补链断裂：agent 过度否证窗口矛盾致用户未签 SIG-015，2/4）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H15-s3a2-r3",
-        "title": "S3A-2 r3 定向修复",
-        "description": "开场第一句强制报学号（r2 四轮用户未报学号→agent 幻觉他人学号 S20230102 替别人办事→SIG-017 不属于本人不可签）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      },
-      {
-        "id": "H15-s3a2-r4",
-        "title": "S3A-2 r4 定向修复",
-        "description": "递补签署改用户自办不问 agent+第一句话以学号开头+不与 agent 谈递补状态（r1 窗口否证/r2-r3 错学号替办，双故障源消除）。",
-        "status": "open",
-        "created_at": "2026-10-04"
-      }
-    ],
     "required_documents": null,
     "user_tools": [
       "check_student_app",
