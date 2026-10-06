@@ -3,6 +3,8 @@
 > **This fork hosts Tau2-ZH**: a 50-task, dual-control Chinese university-academic-affairs domain for [τ²-bench](https://github.com/sierra-research/tau2-bench) (MIT, scoring pinned to **v1.0.1**), plus the first Chinese **pass^k leaderboard across 5 LLMs**.
 >
 > **[简体中文](#项目简介与榜单)** · Domain PR: **[#596](https://github.com/sierra-research/tau2-bench/pull/596)** · Dataset: **[ZitrackHF/tau2-zh-campus](https://huggingface.co/datasets/ZitrackHF/tau2-zh-campus)** · Upstream README: [`main` branch](https://github.com/sierra-research/tau2-bench)
+>
+> **Code pin**: benchmark off tag [`campus-v1.1.3`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.3) or branch `dev/campus` — this default branch is a showcase snapshot, not the benchmark code.
 
 The full domain documentation lives at [`src/tau2/domains/campus/README.md`](src/tau2/domains/campus/README.md). This root page is the project showcase.
 
@@ -70,6 +72,8 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 > 本 fork 承载 **Tau2-ZH**：一个 50 题、双控（dual-control）的中文高校教务办事域，面向 [τ²-bench](https://github.com/sierra-research/tau2-bench)（MIT 许可，计分钉在 **v1.0.1**），并附带首个覆盖 5 个大模型的中文 **pass^k 榜单**。
 >
 > Domain PR: **[#596](https://github.com/sierra-research/tau2-bench/pull/596)** · 数据集：**[ZitrackHF/tau2-zh-campus](https://huggingface.co/datasets/ZitrackHF/tau2-zh-campus)** · 上游 README：[`main` 分支](https://github.com/sierra-research/tau2-bench)
+>
+> **代码锚点**：请基于 tag [`campus-v1.1.3`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.3) 或分支 `dev/campus` 跑基准——本默认分支为展示快照，非基准代码。
 
 完整的域文档位于 [`src/tau2/domains/campus/README.md`](src/tau2/domains/campus/README.md)，本页为项目展示主页。
 
