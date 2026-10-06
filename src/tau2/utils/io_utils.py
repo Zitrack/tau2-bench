@@ -114,13 +114,13 @@ def load_file(path: str | Path, **kwargs: Any) -> dict[str, Any]:
     """
     path = Path(path)
     if path.suffix == ".json":
-        with open(path, "r") as fp:
+        with open(path, "r", encoding="utf-8") as fp:
             data = json.load(fp, **kwargs)
     elif path.suffix == ".yaml" or path.suffix == ".yml":
-        with open(path, "r") as fp:
+        with open(path, "r", encoding="utf-8") as fp:
             data = yaml.load(fp, Loader=yaml.SafeLoader, **kwargs)
     elif path.suffix == ".toml":
-        with open(path, "r") as fp:
+        with open(path, "r", encoding="utf-8") as fp:
             data = toml.load(fp, **kwargs)
     elif path.suffix == ".txt" or path.suffix == ".md":
         encoding = kwargs.pop("encoding", None)
