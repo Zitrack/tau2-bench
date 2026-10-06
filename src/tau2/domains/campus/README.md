@@ -10,7 +10,7 @@
 - **Policy**: `data/tau2/domains/campus/policy.md` — a 36-article service regulation for the fictional university, deliberately packed with time-boundary traps (the add-drop window, deferral deadlines, the maintenance window, month-end settlement, tiered appeals…).
 - **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **17 refusal tasks** (privacy, skipping appeal levels, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
 - **Data**: `db.json` (14 tables) + `user_db.json` (students act through their own app).
-- **Tests**: `tests/test_domains/test_campus/` — 144 pytest cases (tools, replay, contract, full 50-task gold-replay CI, deadline-guard matrix, state-machine invariants).
+- **Tests**: `tests/test_domains/test_campus/` — 146 pytest cases (tools, replay, contract, full 50-task gold-replay CI, deadline-guard matrix, state-machine invariants).
 
 ## 2. Dual-control design
 
@@ -63,7 +63,7 @@ cd tau2-bench
 # install (Python >=3.12,<3.14)
 uv sync
 
-# domain tests (144 cases)
+# domain tests (146 cases)
 uv run pytest tests/test_domains/test_campus
 
 # validate data
@@ -101,6 +101,7 @@ Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.0798
 
 ## 8. Changelog
 
+- **v1.1.4 (2026-10-06) — review-round-4 follow-up (art. 33 closure details).** Validity of the proxy-pickup authorization code now anchors to the **signing time** (`auth_sig.acted_at + 30d`), not the later document-upload time, when the "sign first, upload later" path completes the loop; `get_service_requests` distinguishes the two causes of pending-signature — unsigned → 缺签署（代领授权书）, signed-but-missing-ID → 缺受托人证件影像（第 33 条）— so agents are no longer steered to re-sign. Zero gold impact (no gold task contains the affected strings or the sign-first path); gold-replay CI 50/50, 146 tests green. Fix commit lands after tag `campus-v1.1.3`; use tag `campus-v1.1.4` for the corrected pin.
 - **v1.1.3 (2026-10-06) — proxy-pickup closure & ticket field slimming (art. 33 / art. 16).** `confirm_action` on a proxy-pickup authorization now requires a bound validly-uploaded proxy ID document before the certificate enters production (art. 33: signature + valid document, in either order — a later valid upload completes the loop once the signature is confirmed); confirming without the document holds the certificate at pending-signature instead of silently entering production. `create_ticket`'s optional `target_grade_id` (art. 16 appeal window) is now window-input only, no longer persisted on the ticket row — agents passing it explicitly get byte-identical terminal states to the default path. Zero impact on the published suite: H07's gold actions already upload the proxy document before confirming, and no gold task passes `target_grade_id`. Gold-replay CI 50/50, 144 tests green.
 - **v1.1.2 (2026-10-06) — review follow-up (art. 12).** A medical document uploaded without declaring `hospital_level` (empty or "none") is now marked **returned-for-supplement** instead of invalid; only a declared other-institution (or other non-canonical value) constitutes invalid material → rejection per art. 12, so an incomplete illness-deferral set settles back to pending-materials instead of being rejected and discarding already-valid documents. Zero impact on the published suite: all medical uploads among the 50 tasks declare compliant levels (M05/H01 = top-tier; M16/H07 are non-medical), gold-replay CI 50/50, 141 tests green. Follow-up: `confirm_action` now decides "enter pending-materials" by usable (non-returned) uploads, so a confirmation receipt no longer misreports submitted-for-review when only returned materials exist — response and settled state agree. Variant-level normalization remains disclosed future work.
 - **v1.1.1 (2026-10-06) — hardening.** Pre-settle before every tool call (agent & user sides); user-side deadline guards on signature confirmation and material upload (art. 8/12); special-channel stuck-state terminal transition (confirmed-but-overdue → revert + expire); monotonic waitlist positions (max+1, no position reuse after abandonment). Zero live-impact on the published suite proven by the 50-task gold-replay CI (per-task DB/user-DB hashes byte-identical before/after the change).
@@ -169,7 +170,7 @@ cd tau2-bench
 # 安装（Python >=3.12,<3.14）
 uv sync
 
-# 域测试（144 项）
+# 域测试（146 项）
 uv run pytest tests/test_domains/test_campus
 
 # 数据校验
@@ -207,6 +208,7 @@ uv run tau2 evaluate-trajs <results.json> --fresh-tasks
 
 ## 8. 变更记录
 
+- **v1.1.4（2026-10-06）——第四轮评审跟进（第 33 条闭环细节）**：先签后传路径闭环推进时，代领授权码有效期锚定为**签署时刻**（`auth_sig.acted_at + 30 日`），不再按后置上传时刻起算；`get_service_requests` 对"待签署"按成因分流——未签署 → 缺签署（代领授权书），已签署缺证件 → 缺受托人证件影像（第 33 条）——不再误导 agent 重新签署。对金标零影响（受影响字符串与先签后传路径均不在金标中）；金标重放 CI 50/50，146 项测试全绿。修复提交位于 tag `campus-v1.1.3` 之后，修正版请用 tag `campus-v1.1.4`。
 - **v1.1.3（2026-10-06）——代领闭环与工单字段瘦身（第 33 条 / 第 16 条）**：代领授权的 `confirm_action` 现要求已绑定有效受托人证件影像方可让证明进入制作（第 33 条：签署＋有效证件，两序皆达——后传的有效证件在上传侧闭环推进）；无证件的签署确认将证明保持在"待签署"，不再静默进入制作。`create_ticket` 的可选 `target_grade_id`（第 16 条申诉窗）改为仅作判窗输入、不再写入工单行——显式传参的 agent 终态与缺省路径逐字节一致。对现役 50 题零影响（H07 金标本就先传证件后签署；金标零传参）。金标重放 CI 50/50，144 项测试全绿。
 - **v1.1.2（2026-10-06）——评审跟进（第 12 条）**：医疗类材料未申报医院等级（空串/"无"）改为"已退回补报"而非"无效材料"；仅声明"其他机构"（或其他非 canonical 声明值）才构成无效驳回（第 12 条原文）；`confirm_action` 按可用材料（非退回）判定"进入待材料"，回执不再误报"已提交待审"。对现役 50 题零影响（金标重放 CI 50/50，141 项测试全绿）。变体等级归一化仍为已披露 future work。
 - **v1.1.1（2026-10-06）——加固**：所有工具调用前置结算（pre-settle，agent/学生两侧）；用户侧签署确认与材料上传 deadline 守卫（第 8/12 条）；特别通道"已确认但逾期"终态迁移（回退＋过期）；候补位次单调（max+1，放弃后不复用位次）。50 题双库哈希逐字节一致证明零现役影响。

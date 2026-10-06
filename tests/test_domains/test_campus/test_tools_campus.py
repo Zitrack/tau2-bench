@@ -626,6 +626,37 @@ class TestM1ConsistencyGuards:
         assert ce.status == "待签署"
         assert "尚未上传" in res.message
 
+    def test_proxy_late_upload_validity_anchors_signing(self, env):
+        """R16-A-b（cursor M-1）：先签后传时授权码有效期锚=签署时刻（第33条），非上传时刻。"""
+        t, u = env.tools, env.user_tools
+        r = t.request_certificate("S20230103", "在读证明", delivery="委托代领",
+                                  proxy_name="李受托", proxy_id_masked="****1234")
+        u.bind_student("S20230103")
+        u.confirm_action(r.sig_id)  # T0 = 2026-06-12 10:00（种子时点）
+        t.advance_time(hours=5)
+        env.sync_tools()
+        u.upload_material("certificates", r.cert_id, "身份证件影像", "id.jpg")
+        ce = t.db.certificates[r.cert_id]
+        assert ce.status == "制作中"
+        assert ce.proxy_info.valid_until == "2026-07-12 10:00"  # 签署时刻+30d（若锚上传时刻则=15:00）
+
+    def test_service_requests_cert_missing_distinguishes_doc_vs_sign(self, env):
+        """R16-A-b（cursor M-2）：待签署二因分流——未签署=缺签署；已签署=缺受托人证件（第33条）。"""
+        t, u = env.tools, env.user_tools
+        r = t.request_certificate("S20230103", "在读证明", delivery="委托代领",
+                                  proxy_name="李受托", proxy_id_masked="****1234")
+        u.bind_student("S20230103")
+        rs = t.get_service_requests("S20230103", "certificate")
+        m0 = " ".join(next(x for x in rs.requests if x.request_id == r.cert_id).missing)
+        assert "缺签署" in m0
+        u.confirm_action(r.sig_id)  # 已签署、无证件 → 不应再引导重新签署
+        rs = t.get_service_requests("S20230103", "certificate")
+        m1 = " ".join(next(x for x in rs.requests if x.request_id == r.cert_id).missing)
+        assert "缺受托人证件影像" in m1 and "缺签署" not in m1
+        u.upload_material("certificates", r.cert_id, "身份证件影像", "id.jpg")
+        rs = t.get_service_requests("S20230103", "certificate")
+        assert not next(x for x in rs.requests if x.request_id == r.cert_id).missing
+
     def test_deferral_requires_own_enrollment(self, env):
         # S20250401 在读但未选 OF-2026SP-203-1 → 缓考绑定守卫拒绝（第12/10条）
         with pytest.raises(ValueError, match="未找到该课程的在读选课记录，无法申请缓考（政策第12/10条）"):

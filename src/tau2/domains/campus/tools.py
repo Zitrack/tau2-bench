@@ -1071,7 +1071,12 @@ class CampusTools(ToolKitBase):
                     continue
                 missing = []
                 if ce.status == CertStatus.PENDING_SIGN.value:
-                    missing.append("缺签署（代领授权书）")
+                    # R16-A-b（cursor M-2）：待签署有二因——未签署 vs 已签署缺受托人证件（第33条闭环新组合态）
+                    auth_sig = self.user_db.pending_signatures.get(ce.proxy_info.auth_sig_id) if ce.proxy_info else None
+                    if auth_sig is not None and auth_sig.status == SigStatus.CONFIRMED.value:
+                        missing.append("缺受托人证件影像（第33条：签署已完成，上传有效证件即可进入制作）")
+                    else:
+                        missing.append("缺签署（代领授权书）")
                 items.append(RequestInfo(
                     request_id=ce.cert_id, kind=kind, status=ce.status, stage="",
                     deadline_at=ce.pickup_deadline, reject_reason=None, missing=missing,

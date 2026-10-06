@@ -324,7 +324,8 @@ class CampusUserTools(ToolKitBase):
                     auth_sig = self.db.pending_signatures.get(row.proxy_info.auth_sig_id)
                     if auth_sig is not None and auth_sig.status == SigStatus.CONFIRMED.value:
                         row.status = CertStatus.MAKING
-                        row.proxy_info.valid_until = fmt_time(self.now + timedelta(days=30))
+                        # 第33条：授权码自"签署"起 30 日——先签后传时锚=签署时刻（R16-A-b，cursor M-1）
+                        row.proxy_info.valid_until = fmt_time(parse_time(auth_sig.acted_at) + timedelta(days=30))
                         message += "；受托人证件影像已收到并绑定，代领授权齐备，证明进入制作（第33条）。"
                     else:
                         message += "；受托人证件影像已收到并绑定，待本人完成代领授权签署（第33条）。"
