@@ -1,0 +1,40 @@
+name: campus-tests
+
+on:
+  push:
+    branches:
+      - dev/campus
+    paths:
+      - 'src/tau2/domains/campus/**'
+      - 'data/tau2/domains/campus/**'
+      - 'tests/test_domains/test_campus/**'
+      - '.github/workflows/campus-ci.yml'
+  pull_request:
+    paths:
+      - 'src/tau2/domains/campus/**'
+      - 'data/tau2/domains/campus/**'
+      - 'tests/test_domains/test_campus/**'
+      - '.github/workflows/campus-ci.yml'
+
+jobs:
+  campus-tests:
+    # Fork-side guard: no-op once this workflow lands in the upstream repo,
+    # so sierra-research runners never pick up campus CI.
+    if: github.repository == 'Zitrack/tau2-bench'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10
+        with:
+          python-version: '3.12'
+          enable-cache: true
+
+      # pytest lives in the optional `dev` extra ([project.optional-dependencies]).
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run campus tests
+        run: uv run pytest tests/test_domains/test_campus -q
