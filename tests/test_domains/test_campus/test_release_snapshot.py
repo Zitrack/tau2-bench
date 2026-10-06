@@ -12,7 +12,7 @@ Freezes two kinds of "must not drift back" facts as pytest assertions:
      keys, and zero exam-point number hints (``P0[0-9]``) / "坑点" in the
      agent-visible ``purpose`` / ``relevant_policies`` fields (W2 scrub).
 
-Version linkage: ``POLICY_VERSION == "1.4"`` is the **current contract
+Version linkage: ``POLICY_VERSION == "1.4.1"`` is the **current contract
 value**. If the v2.0.0 release batch bumps it (e.g. to ``1.4.1``), this
 assertion and the release manifest must be updated **in the same change**
 (W-SERIES-PLAN §v2.0.0 发布批 §1) — they move together.
@@ -58,7 +58,7 @@ def test_version_is_semver():
 
 def test_policy_version_contract():
     """Current contract value — bump together with the release manifest."""
-    assert campus.POLICY_VERSION == "1.4"
+    assert campus.POLICY_VERSION == "1.4.1"
 
 
 def test_scoring_protocol_contract():
