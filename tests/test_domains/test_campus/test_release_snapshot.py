@@ -13,9 +13,8 @@ Freezes two kinds of "must not drift back" facts as pytest assertions:
      agent-visible ``purpose`` / ``relevant_policies`` fields (W2 scrub).
 
 Version linkage: ``POLICY_VERSION == "1.4.1"`` is the **current contract
-value**. If the v2.0.0 release batch bumps it (e.g. to ``1.4.1``), this
-assertion and the release manifest must be updated **in the same change**
-(W-SERIES-PLAN §v2.0.0 发布批 §1) — they move together.
+value**. If a future release bumps it, this assertion and the release
+manifest must be updated **in the same change** — they move together.
 
 A failure here means a cleaned field regressed (or an authorized version
 bump landed without updating this snapshot): fix the drift or update the

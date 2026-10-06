@@ -1,12 +1,12 @@
-"""User-side toolkit for the campus domain (学生小程序, tools-spec §3).
+"""User-side toolkit for the campus domain (学生小程序).
 
-dual-control 硬边界（tools-spec §0.1）：
+dual-control 硬边界：
 - 学生侧独有动作＝上传材料、签署确认、拒签撤回——Agent 侧永不翻 pending_signatures.status /
   uploads.status；本侧是唯一能置"已确认/已拒绝/无效材料→已核验"的入口。
 - Toolkit 绑定 student_id（初始化注入，经 initialization_actions 调用 `bind_student`，
   学生侧不可指定他人）。业务记录在主库（CampusDB），本侧只翻转 §5 时序契约中属于自己的格子。
 
-工具返回值首字段 server_time（§0.3）；时间一律取 db.env.current_time（T11）。
+工具返回值首字段 server_time；时间一律取 db.env.current_time。
 """
 
 from datetime import timedelta
@@ -124,10 +124,10 @@ class CampusUserTools(ToolKitBase):
         self.bound_student_id: Optional[str] = student_id
 
     def use_tool(self, tool_name: str, **kwargs):
-        """先结算后变更（pre-settle，M4-D1）+ 执行后结算（T9）：学生侧动作经共享的
+        """先结算后变更（pre-settle）+ 执行后结算：学生侧动作经共享的
         agent_tools.settle 收敛主库+用户库（两侧同一对 DB 实例，结算同源）。
         语义/幂等性/零现役影响与 CampusTools.use_tool 同（settle 为状态与时间的
-        纯函数；A1 逐题哈希对照证明 pre-settle 现役 no-op）。金标评测循环走
+        纯函数；金标重放逐题哈希对照证明 pre-settle 现役 no-op）。金标评测循环走
         make_tool_call→use_tool 且不额外调 sync_tools，结算必须挂在执行路径上。"""
         if self.agent_tools is not None:
             self.agent_tools.settle()
@@ -242,7 +242,7 @@ class CampusUserTools(ToolKitBase):
             raise ValueError(f"未找到业务记录 {ref_id}。")
         if getattr(row, "student_id") != sid:
             raise ValueError(f"记录 {ref_id} 不属于本人：学生仅可办理本人事务（政策第4条）。")
-        # M4-D1 业务行 deadline 守卫（校验顺序前部、维护检查之后；第12/26条）。
+        # 业务行 deadline 守卫（校验顺序前部、维护检查之后；第12/26条）。
         # 只对带硬截止的业务行生效：DF.deadline_at（缓考申报时限，第12条）与
         # APP.deadline_at（第26条，字段现无、分支预留）；certificate 无硬截止
         # （pickup_deadline 为领取期限，不拦上传）、工单 promised_reply_at 是
@@ -259,7 +259,7 @@ class CampusUserTools(ToolKitBase):
         medical_doc = doc_type in (UploadDocType.MEDICAL_DIAGNOSIS.value, UploadDocType.SICK_LEAVE.value)
         status = UploadStatus.UPLOADED
         note = ""
-        # M6-F1 第12条三分类（医疗类材料）：
+        # 第12条三分类（医疗类材料）：
         #   声明"其他机构"或任何非 canonical 声明值 → 无效材料 → 结算驳回（第12条原文）；
         #   未申报（空串/"无"）→ 已退回，补报等级后重新上传，不作无效处理；
         #   canonical（三甲/校医院指定门诊）→ 有效。
@@ -303,7 +303,7 @@ class CampusUserTools(ToolKitBase):
                 self._complete_todo(TodoType.DEFERRAL_UPLOAD.value, ref_id)
                 message += f"；材料有效，缓考申请 {ref_id} 进入待审（已提交待审）。"
             elif row.status == DeferralStatus.PENDING_SIGN.value:
-                # D-S3A-3：签署前已上传有效材料——材料上传待办即完成（办结语义，第12条），
+                # 签署前已上传有效材料——材料上传待办即完成（办结语义，第12条），
                 # 业务状态仍留"待签署"，等学生本人完成签署确认。
                 self._complete_todo(TodoType.DEFERRAL_UPLOAD.value, ref_id)
                 message += f"；材料有效并挂接 {ref_id}，待本人完成签署确认。"
@@ -318,13 +318,13 @@ class CampusUserTools(ToolKitBase):
                 row.reject_reason = "材料无效（第12/28条）。"
         elif ref_type == "certificates":
             if row.delivery == "委托代领" and row.proxy_info is not None and status == UploadStatus.UPLOADED:
-                # 第33条闭环（R16-A）：有效证件影像落库绑定；签署+证件齐备（任一顺序）方进入制作
+                # 第33条闭环：有效证件影像落库绑定；签署+证件齐备（任一顺序）方进入制作
                 row.proxy_info.proxy_doc_upload_id = up_id
                 if row.status == CertStatus.PENDING_SIGN.value:
                     auth_sig = self.db.pending_signatures.get(row.proxy_info.auth_sig_id)
                     if auth_sig is not None and auth_sig.status == SigStatus.CONFIRMED.value:
                         row.status = CertStatus.MAKING
-                        # 第33条：授权码自"签署"起 30 日——先签后传时锚=签署时刻（R16-A-b，cursor M-1）
+                        # 第33条：授权码自"签署"起 30 日——先签后传时锚=签署时刻
                         row.proxy_info.valid_until = fmt_time(parse_time(auth_sig.acted_at) + timedelta(days=30))
                         message += "；受托人证件影像已收到并绑定，代领授权齐备，证明进入制作（第33条）。"
                     else:
@@ -347,9 +347,9 @@ class CampusUserTools(ToolKitBase):
         sig = self.db.pending_signatures.get(sig_id)
         if sig is None or sig.student_id != sid:
             raise ValueError(f"未找到待签署单 {sig_id}（或不属于本人）。")
-        # M4-D1 单据确认 deadline 守卫（校验顺序前部、维护检查之后）。语义边界写死：
+        # 单据确认 deadline 守卫（校验顺序前部、维护检查之后）。语义边界写死：
         # ① `now > deadline_at` 才拒——政策第2条 23:59 截止，deadline 当刻仍在界内；
-        # ② 特别通道新单（drop_course 建）不带 deadline（D-S2A-5），天然不适用本守卫
+        # ② 特别通道新单（drop_course 建）不带 deadline，天然不适用本守卫
         #    （种子历史单据如 SIG-016 带 deadline 则一致生效）；
         # ③ 与 B2"窗口关闭后10个工作日"提交窗是两个不同判据，互不替代。
         # 置于 status 检查之前：pre-settle 会先把过期单据置"已过期"，守卫保证给出
@@ -367,7 +367,7 @@ class CampusUserTools(ToolKitBase):
         if doc == SigDocType.DEFERRAL_APP:
             df = self.main_db.deferral_requests.get(sig.ref_id)
             if df is not None and df.status == DeferralStatus.PENDING_SIGN.value:
-                # M6-F2（第三轮审查）："进入待材料"按可用材料判定——仅存在已退回
+                # "进入待材料"按可用材料判定——仅存在已退回
                 # （未申报等级）材料时同样进入待材料，确认回执不再误报"已提交待审"
                 # （结算侧本会纠正为待材料，此处使响应与结算一致）。
                 usable = df.reason_type != DeferralReasonType.ILLNESS.value or any(
@@ -420,7 +420,7 @@ class CampusUserTools(ToolKitBase):
                     ce.proxy_info.valid_until = fmt_time(self.now + timedelta(days=30))
                     message += f"代领授权生效：证明 {ce.cert_id} 进入制作（第33条：授权码30日内有效）。"
                 else:
-                    # 第33条闭环（R16-A）：签署完成但受托人证件未上传/无效——不进入制作；
+                    # 第33条闭环：签署完成但受托人证件未上传/无效——不进入制作；
                     # 后续有效证件经 upload_material 按已签署 auth_sig_id 推进闭环
                     message += f"代领授权书已签署；受托人证件影像尚未上传（或无效），证明 {ce.cert_id} 暂不进入制作（第33条）。"
                 business_status = ce.status
@@ -447,7 +447,7 @@ class CampusUserTools(ToolKitBase):
         if sig is None or sig.student_id != sid:
             raise ValueError(f"未找到待签署单 {sig_id}（或不属于本人）。")
         if sig.status != SigStatus.PENDING:
-            # M4-D1 决策 D-M4-2（handoff）：拒签侧不设独立 deadline 判断——逾期单据
+            # 拒签侧不设独立 deadline 判断——逾期单据
             # 已由 pre-settle 置"已过期"，本 status!=PENDING 检查即覆盖（拒签逾期单
             # 同样非法），以实现最简；与 confirm 侧守卫（需"逾期"专用文案）非对称。
             raise ValueError(f"签署单 {sig_id} 状态为'{_s(sig.status)}'，不可拒签。")

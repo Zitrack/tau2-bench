@@ -1,11 +1,11 @@
 """Toolkit for the campus domain (Agent side).
 
-Implements 02-domain/tools-spec.md v1.1 §0/§2/§4/§6 + T7 ruling (R2-review-record §3):
-READ 7 + WRITE 8 (incl. withdraw_application), all WRITE pass the P11 maintenance gate,
+Implements the campus tools spec v1.1:
+READ 7 + WRITE 8 (incl. withdraw_application), all WRITE pass the maintenance-window gate,
 all tool results carry `server_time` as first field (政策第2条), and all time reads come
-from `db.env.current_time` — never the system clock (campus-domain-plan T11).
+from `db.env.current_time` — never the system clock.
 
-State-machine settlement (T9, tools-spec §5 时序契约) lives in `settle_*` helpers called
+State-machine settlement (时序契约) lives in `settle_*` helpers called
 by `CampusEnvironment.sync_tools()` after every message / initialization action, so
 live runs and evaluator replays converge identically.
 """
@@ -64,7 +64,7 @@ def _s(v: Any) -> str:
     统一转中文 value（重放两侧同源，判分/展示一致）。"""
     return v.value if isinstance(v, Enum) else str(v)
 
-# --------------------------------------------------------------- 错误文案目录（tools-spec §4 原文，S4 期间不得改措辞）
+# --------------------------------------------------------------- 错误文案目录（措辞冻结：测试与金标依赖原文）
 
 E_WINDOW_CLOSED = "补退选已于 {deadline} 截止（政策第7条）。本学期不再受理{action}；如为毕业班学生可走特别通道（第9条）。"
 E_PREREQ_MISSING = "《{course}》要求先修《{prereq}》合格或正在修读（政策第6条）。当前不满足。"
@@ -80,8 +80,8 @@ E_MAINTENANCE = "当前处于系统维护时段（周日23:00–周一06:00，�
 E_CERT_BATCH = "证明系统月末结账中（最后工作日17:00–22:00，第31条），申请已顺延。"
 E_REVIEW_EXPIRED = "成绩公布已超5个工作日，查分不受理（第16条）；申诉通道不适用于替代查分。"
 E_LEVEL = "复核须先经学院处理（第34条），请提供原学院工单号后提交。"
-# E-WAITLIST-FROZEN：tools-spec §2 join_waitlist 引用了该错误码，但 §4 目录未收录文案；
-# 按 §0.4（中文、含指引）补写，见 S2A handoff 决策日志 D-S2A-3。
+# E-WAITLIST-FROZEN：join_waitlist 引用了该错误码，但目录原本未收录文案；
+# 按目录体例补写（中文、含指引）。
 E_WAITLIST_FROZEN = "本学期候补放弃已累计3次（政策第8条），候补功能已关闭，不再受理加入候补。"
 
 # 周几中文映射（weekday(): 0=周一）
@@ -104,7 +104,7 @@ def day_end(dt: datetime) -> datetime:
 
 
 def is_workday(dt: datetime) -> bool:
-    """第2条：工作日＝周一至周五（法定节假日不入计算，plan §3 已知简化）。"""
+    """第2条：工作日＝周一至周五（法定节假日不入计算，已知简化）。"""
     return dt.weekday() < 5
 
 
@@ -142,7 +142,7 @@ def last_workday_of_month(year: int, month: int) -> datetime:
 
 
 def in_maintenance(dt: datetime) -> bool:
-    """P11 第3条：周日23:00–周一06:00。"""
+    """第3条：周日23:00–周一06:00。"""
     wd = dt.weekday()  # 0=Mon..6=Sun
     if wd == 6 and dt.hour >= 23:
         return True
@@ -179,8 +179,8 @@ def next_table_id(table: Dict[str, Any], key_field: str, prefix: str, width: int
     return f"{prefix}-{max_n + 1:0{width}d}"
 
 
-# --------------------------------------------------------------- 返回视图模型（tools-spec §2 签名落定；
-# 列表型返回统一包 server_time 首字段对象，满足 §0.3，见 handoff 决策日志 D-S2A-2）
+# --------------------------------------------------------------- 返回视图模型（签名落定；
+# 列表型返回统一包 server_time 首字段对象）
 
 
 class StudentDetails(BaseModelNoExtra):
@@ -400,7 +400,7 @@ class WithdrawResult(BaseModelNoExtra):
 class CampusTools(ToolKitBase):
     """Agent-side tools for the campus domain. Reads/writes CampusDB (`db`) and may
     GENERATE rows in UserDB (`user_db`) for signature/todo handoffs — the dual-control
-    boundary (tools-spec §0.1) forbids flipping pending_signatures.status /
+    boundary forbids flipping pending_signatures.status /
     uploads.status here."""
 
     db: CampusDB
@@ -411,18 +411,18 @@ class CampusTools(ToolKitBase):
         self.user_db = user_db if user_db is not None else UserDB()
 
     def use_tool(self, tool_name: str, **kwargs):
-        """先结算后变更（pre-settle，M4-D1）+ 执行后结算（T9）。
+        """先结算后变更（pre-settle）+ 执行后结算。
 
         - pre-settle：任何调用（含只读）执行前先把状态机收敛到当前 current_time——
-          "变更永远发生在已结算状态之上"，与 M2-B0 的关系：B0 把计数改为
+          "变更永远发生在已结算状态之上"。选课计数由
           `_recount_enrolled` 权威重算（settle 内执行），pre-settle 保证该重算在
           每次分支判断/写入前已反映，杜绝基于陈旧计数的判断（TOCTOU 类缺口）。
-        - 执行后 settle（T9 原语义）：评测金标重放走 make_tool_call→use_tool 且不
+        - 执行后 settle：评测金标重放走 make_tool_call→use_tool 且不
           额外调 sync_tools（evaluator_env 循环），故结算必须挂在工具执行路径上。
         - 只读调用同样触发两侧（settle 是状态/时间的纯函数，幂等，多调无害）。
         - 现役冻结时间下 pre-settle 恒为 no-op（set_state 末尾与上一次调用的后置
-          settle 已收敛状态，两次调用间 current_time 不变）——由 A1 逐题哈希与
-          a8ae237 基线逐位一致证明（M4 handoff "A1 哈希对照"节）。"""
+          settle 已收敛状态，两次调用间 current_time 不变）——由 50 题金标重放
+          逐题哈希与基线逐位一致证明。"""
         self.settle()
         resp = super().use_tool(tool_name, **kwargs)
         self.settle()
@@ -438,7 +438,7 @@ class CampusTools(ToolKitBase):
         return self.db.env.current_time
 
     def _check_maintenance(self) -> None:
-        """P11 闸门：所有 WRITE 先查（tools-spec §0.2）。"""
+        """维护窗口闸门：所有 WRITE 先查。"""
         if in_maintenance(self.now):
             raise ValueError(E_MAINTENANCE)
 
@@ -490,7 +490,7 @@ class CampusTools(ToolKitBase):
 
     def _make_sig(self, student_id: str, doc_type: SigDocType, ref_type: str, ref_id: str,
                   summary: str, deadline_at: Optional[str] = None) -> str:
-        """生成待签署单（Agent 只能生成行，不能翻状态——tools-spec §0.1）。"""
+        """生成待签署单（Agent 只能生成行，不能翻状态——双控硬边界）。"""
         sid = self._sig_id_gen()
         row = SignatureRow(
             sig_id=sid, student_id=student_id, doc_type=doc_type,
@@ -513,7 +513,7 @@ class CampusTools(ToolKitBase):
         return tid
 
     def _expire_open_signatures(self, ref_type: str, ref_id: str) -> List[str]:
-        """撤回时失效关联待签署单/待办（D-S2A-4：SIG/TODO 枚举无"已撤回"，用"已过期"作废）。"""
+        """撤回时失效关联待签署单/待办（SIG/TODO 枚举无"已撤回"，用"已过期"作废）。"""
         done: List[str] = []
         for sig in self.user_db.pending_signatures.values():
             if sig.ref_type == ref_type and sig.ref_id == ref_id and sig.status == SigStatus.PENDING:
@@ -526,10 +526,10 @@ class CampusTools(ToolKitBase):
                 done.append(todo.todo_id)
         return done
 
-    # ------------------------------------------------- 时间钩子（T4；非工具，不进轨迹）
+    # ------------------------------------------------- 时间钩子（非工具，不进轨迹）
 
     def advance_time(self, hours: int = 0, days: int = 0) -> str:
-        """环境快进钩子（campus-domain-plan T4；经 initial_state.initialization_actions
+        """环境快进钩子（经 initial_state.initialization_actions
         的 EnvFunctionCall 调用，本身不是工具动作、不进用户轨迹）。推进后由
         sync_tools 结算规则化终态。"""
         self.db.env.current_time = fmt_time(self.now + timedelta(hours=hours, days=days))
@@ -569,10 +569,10 @@ class CampusTools(ToolKitBase):
         )
         return sig_id
 
-    # ------------------------------------------------- 状态机结算（T9，sync_tools 调）
+    # ------------------------------------------------- 状态机结算（sync_tools 调）
 
     def settle(self) -> None:
-        """确定性结算（tools-spec §6：全部规则化、零裁判）。只依赖 db 状态与 current_time，
+        """确定性结算（全部规则化、零裁判）。只依赖 db 状态与 current_time，
         因此 live 轨迹与评估重放（金标/预测）收敛一致。"""
         now = self.now
         self._settle_deferrals(now)
@@ -585,7 +585,7 @@ class CampusTools(ToolKitBase):
     def _settle_deferrals(self, now: datetime) -> None:
         for df in list(self.db.deferral_requests.values()):
             if df.status == DeferralStatus.SUBMITTED.value:
-                # §6：材料齐（因病＝诊断证明+病假条双件，第12条/M2-B1）＋签署齐＋额度时限内＝通过；
+                # §6：材料齐（因病＝诊断证明+病假条双件，第12条）＋签署齐＋额度时限内＝通过；
                 # 任一缺＝驳回并给出 reject_reason
                 if df.reason_type == DeferralReasonType.ILLNESS.value:
                     uploads = [
@@ -622,7 +622,7 @@ class CampusTools(ToolKitBase):
     def _award_year_ok(self, student: StudentRow, award: Any) -> List[str]:
         """受理即时资格校验（第24/27/28条，P05/P06/P08），返回逐条拒绝原因；空列表＝通过。
         注：gpa_rank/comprehensive_rank 依赖年级排名名单（第29条：口径以教务处当期公布计算表
-        为准），数据源不在本域 schema 内，按契约不校验（见 S2A handoff 移交事项）。"""
+        为准），数据源不在本域 schema 内，按契约不校验。"""
         reasons: List[str] = []
         elig = award.eligibility
         ay = self._current_academic_year()
@@ -764,7 +764,7 @@ class CampusTools(ToolKitBase):
             self._promote_next_waitlist(off.offering_id)
 
     def _recount_enrolled(self, offering_id: str) -> None:
-        """权威重算 enrolled_count（M2-B0/R11 裁定）：以该开课 status=已选 行数为唯一
+        """权威重算 enrolled_count：以该开课 status=已选 行数为唯一
         口径（data_model.py:391 契约，特别通道审核中行不计入），替代结算分支手工 ±1——
         种子构造与结算分支的三方约定由此自洽（幂等）。"""
         off = self.db.course_offerings[offering_id]
@@ -785,13 +785,13 @@ class CampusTools(ToolKitBase):
             off = self.db.course_offerings.get(en.offering_id)
             if sig.status == SigStatus.CONFIRMED:
                 if sig.deadline_at and self.now > parse_time(sig.deadline_at):
-                    # M4-D2 终态迁移（R10 P1-2/R11 裁定）：确认已受理但签署时限已过。
+                    # 终态迁移：确认已受理但签署时限已过。
                     # 原 continue 会让 EN 永久卡在"特别通道审核中"（卡死侧无出口）；
                     # 现迁移为终态：EN 回'已选'（维持原状，计数走 _recount_enrolled
                     # 权威重算，与 REJECTED/EXPIRED 回退分支同构）+ SIG 置'已过期'
                     # （acted_at 保留学生确认时刻，不覆盖）。该分支现役不可达——
                     # D1 确认守卫前置（过期单据不可再确认，pre-settle 亦先置已过期
-                    # 双保险），drop_course 新建特别单不带 deadline（D-S2A-5）——
+                    # 双保险），drop_course 新建特别单不带 deadline——
                     # 但按终态完备性必须存在（构造性测试
                     # test_special_channel_confirmed_past_deadline_migrates 见证）。
                     en.status = EnrollmentStatus.ENROLLED
@@ -1071,7 +1071,7 @@ class CampusTools(ToolKitBase):
                     continue
                 missing = []
                 if ce.status == CertStatus.PENDING_SIGN.value:
-                    # R16-A-b（cursor M-2）：待签署有二因——未签署 vs 已签署缺受托人证件（第33条闭环新组合态）
+                    # 待签署有二因——未签署 vs 已签署缺受托人证件（第33条闭环新组合态）
                     auth_sig = self.user_db.pending_signatures.get(ce.proxy_info.auth_sig_id) if ce.proxy_info else None
                     if auth_sig is not None and auth_sig.status == SigStatus.CONFIRMED.value:
                         missing.append("缺受托人证件影像（第33条：签署已完成，上传有效证件即可进入制作）")
@@ -1247,7 +1247,7 @@ class CampusTools(ToolKitBase):
             )
         # 窗口外：第9条 毕业班特别通道
         if s.is_graduating_cohort:
-            # M2-B2/P1-4：第9条提交窗——补退选窗口关闭后 10 个工作日内，超窗拒收
+            # 第9条提交窗——补退选窗口关闭后 10 个工作日内，超窗拒收
             window_end = day_end(nth_workday_after_date(parse_time(off.adddrop_deadline), 10))
             if self.now > window_end:
                 raise ValueError(f"特别退改申请须于补退选窗口关闭后 10 个工作日内提交"
@@ -1258,7 +1258,7 @@ class CampusTools(ToolKitBase):
             )
             en.status = EnrollmentStatus.SPECIAL_CHANNEL_REVIEW
             # 已知契约缺口：TodoType 无"特别通道确认"枚举值，本通道仅生成 SIG（不生成 TODO），
-            # 学生经 check_student_app 待签署列表可见。见 S2A handoff 决策日志 D-S2A-5。
+            # 学生经 check_student_app 待签署列表可见。
             return DropResult(
                 server_time=self._server_time(), enrollment_id=enrollment_id,
                 status=en.status.value, special_sig_id=sig_id,
@@ -1277,12 +1277,12 @@ class CampusTools(ToolKitBase):
         """
         self._check_maintenance()
         s = self._student(student_id)
-        # ① 学籍＝在读（第10条，M1-A5/P1-9：候补同享选课服务约束）
+        # ① 学籍＝在读（第10条：候补同享选课服务约束）
         if s.student_status != StudentStatus.ACTIVE.value:
             raise ValueError(f"当前学籍状态为'{_s(s.student_status)}'（政策第10条）：非在读状态不享受选课服务（含候补）。")
         off = self._offering(offering_id)
         course_name = self._course_name(off)
-        # ② 已停开不可候补（第9条相关，M1-A6/P1-8）
+        # ② 已停开不可候补（第9条相关）
         if off.status == OfferingStatus.SUSPENDED.value:
             raise ValueError(f"《{course_name}》本学期已停开（第9条相关）：不可加入候补。")
         if s.waitlist_abandon_count >= 3:
@@ -1297,7 +1297,7 @@ class CampusTools(ToolKitBase):
             if e.student_id == student_id and e.offering_id == offering_id and e.status in (
                     EnrollmentStatus.ENROLLED.value, EnrollmentStatus.WAITLISTED.value):
                 raise ValueError(f"《{course_name}》已有选课/候补记录（状态：{_s(e.status)}）。")
-        # M4-D3 位次单调（第8条队列顺位）：取该开课活跃候补行的最大位次+1——
+        # 位次单调（第8条队列顺位）：取该开课活跃候补行的最大位次+1——
         # 旧公式 waitlist_count+1 在前位放弃（计数-1）后重入会复用已占位次
         # （如 A=1/B=2，A 弃后 C 得 2 与 B 撞号）；max+1 保证位次只增不重复，
         # 且 C 恒排在存活的 B 之后（顺位正确）。空队列 default=0 → 首位 1。
@@ -1342,7 +1342,7 @@ class CampusTools(ToolKitBase):
             raise ValueError(f"考试 {exam_id} 不属于开课 {offering_id}，请核对考试与课程对应关系。")
         off = self._offering(offering_id)
         course_name = self._course_name(off)
-        # M1-A3（P1-5）：缓考绑定本人在该开课的在读选课行（政策第12/10条）
+        # 缓考绑定本人在该开课的在读选课行（政策第12/10条）
         if not any(
                 e.student_id == student_id and e.offering_id == offering_id
                 and e.status in (EnrollmentStatus.ENROLLED.value, EnrollmentStatus.SPECIAL_CHANNEL_REVIEW.value)
@@ -1356,7 +1356,7 @@ class CampusTools(ToolKitBase):
             if self.now > deadline:
                 raise ValueError(E_DEFERRAL_EXPIRED)
         elif reason_type == DeferralReasonType.ILLNESS.value:
-            # M1-A4（P1-6）：因病仅考后补办（第12条二）
+            # 因病仅考后补办（第12条二）
             if filing_type != DeferralFilingType.AFTER_EXAM.value:
                 raise ValueError("因病缓考属考后补办（第12条二）：须于考试结束后3个工作日内补办；考前申报仅适用于冲突缓考。")
             deadline = day_end(nth_workday_after_date(sched, 3))
@@ -1552,7 +1552,7 @@ class CampusTools(ToolKitBase):
             content: 工单内容（实名+学号+事由，第35条）。
             parent_ticket_id: 复核申诉时必填的原学院工单号 TK-xxx。
             target_grade_id: 可选，申诉目标成绩行 GR-xxx；指定后仅按该成绩判窗，空＝原行为不变。
-                仅作判窗输入、不写入工单行（R16-A：避免 agent 显式传参使 DB 终态与金标缺省路径哈希分叉）。
+                仅作判窗输入、不写入工单行（避免 agent 显式传参使 DB 终态与金标缺省路径哈希分叉）。
         """
         self._check_maintenance()
         self._student(student_id)
@@ -1561,7 +1561,7 @@ class CampusTools(ToolKitBase):
         # 第16条查分预检：仅"申诉+成绩+逾期"组合拦截（v1.1-F2，D4/R1 定案）
         if category == TicketCategory.APPEAL.value and module == TicketModule.GRADE.value:
             if target_grade_id:
-                # M1-A2（P1-3）：绑定目标成绩时按该行判窗（缺省 target 时下方 any() 扫描为修前原行为）
+                # 绑定目标成绩时按该行判窗（缺省 target 时下方 any() 扫描为修前原行为）
                 grade = self.db.grades.get(target_grade_id)
                 if grade is None or grade.student_id != student_id:
                     raise ValueError(f"未找到成绩记录 {target_grade_id}（或不属于该学号）。")

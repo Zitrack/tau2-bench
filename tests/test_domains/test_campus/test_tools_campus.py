@@ -1,12 +1,12 @@
-"""Campus domain tool tests (S2A T10).
+"""Campus domain tool tests.
 
 Two layers:
-1. Error catalog table-driven: every tools-spec §4 code triggered on seed data,
-   message compared against the §4 template text (措辞即判分变量，逐字).
-2. State-machine transition tables: the 5 dual-control chains of tools-spec §5
+1. Error catalog table-driven: every error-catalog code triggered on seed data,
+   message compared against the catalog template text (措辞即判分变量，逐字).
+2. State-machine transition tables: the 5 dual-control chains
    plus withdraw/expiry branches, asserted end-state-only (env_assertions 口径).
 
-Data targets are hardcoded against contract db.json seed (baseline ea7ec13);
+Data targets are hardcoded against the contract seed;
 regenerating seeds must keep these anchors or update this file in the same commit.
 """
 
@@ -161,7 +161,7 @@ class TestDeferralChain:
         assert "无效材料" in df.reject_reason
 
     def test_illness_valid_material_approve(self, env):
-        """M2-B1（P1-1）：因病缓考须诊断证明+病假条双材料齐（第12条）方可通过；
+        """因病缓考须诊断证明+病假条双材料齐（第12条）方可通过；
         顺序对齐 M05 合规样板：submit→confirm→上传两份→settle→通过。"""
         t, u = env.tools, env.user_tools
         r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
@@ -176,7 +176,7 @@ class TestDeferralChain:
         assert t.user_db.uploads[up2.upload_id].status == "已核验"
 
     def test_illness_single_material_stays_pending(self, env):
-        """M2-B1（P1-1 核心断言）：仅有诊断证明一份（缺病假条）不满足第12条
+        """仅有诊断证明一份（缺病假条）不满足第12条
         '诊断证明及病假建议'双材料必齐 → 结算留'待材料'，不得放行。"""
         t, u = env.tools, env.user_tools
         r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
@@ -187,7 +187,7 @@ class TestDeferralChain:
         assert t.db.deferral_requests[r.request_id].status == "待材料"
 
     def test_undeclared_level_returned_not_rejected(self, env):
-        """M6-F1（Bugbot #4185973234）：第12条只对声明'其他机构'的材料定无效→驳回；
+        """第12条只对声明'其他机构'的材料定无效→驳回；
         第二份医疗材料漏报医院等级＝已退回（补报），结算走既有'待材料'路径而非驳回
         （第一份已有效的诊断证明不被作废）；补传带等级的病假条后结算通过、双材料核验。"""
         t, u = env.tools, env.user_tools
@@ -212,7 +212,7 @@ class TestDeferralChain:
         assert t.user_db.uploads[up2.upload_id].status == "已退回"  # 退回行不参与核验
 
     def test_none_level_treated_as_undeclared(self, env):
-        """M6-F1：显式声明'无'与空串同路径＝未申报 → 已退回补报（非无效材料、非驳回）。"""
+        """显式声明'无'与空串同路径＝未申报 → 已退回补报（非无效材料、非驳回）。"""
         t, u = env.tools, env.user_tools
         r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
         u.bind_student("S20230103")
@@ -228,7 +228,7 @@ class TestDeferralChain:
         assert df.reject_reason is None
 
     def test_other_institution_still_rejects(self, env):
-        """M6-F1 边界（第12条原文不变）：声明'其他机构'＝无效材料→整单驳回；
+        """边界（第12条原文不变）：声明'其他机构'＝无效材料→整单驳回；
         即便第一份三甲诊断证明已有效，第二份'其他机构'仍触发驳回。"""
         t, u = env.tools, env.user_tools
         r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
@@ -242,7 +242,7 @@ class TestDeferralChain:
         assert "无效材料" in df.reject_reason
 
     def test_confirm_with_only_returned_uploads_reports_pending(self, env):
-        """M6-F2（第三轮审查）：仅存在已退回（未申报等级）材料时，签署确认回执
+        """仅存在已退回（未申报等级）材料时，签署确认回执
         如实报"待材料"而非"已提交待审"——响应与结算终态一致。"""
         t, u = env.tools, env.user_tools
         r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
@@ -256,9 +256,9 @@ class TestDeferralChain:
         assert t.db.deferral_requests[r.request_id].status == "待材料"
 
     def test_upload_before_sign_completes_upload_todo(self, env):
-        """D-S3A-3：签署前上传有效材料，材料上传待办即完成，业务行仍待签署。
-        M1-A3 适配：场景从 504/EX-0050（该生无选课行，绑定守卫后非法）改为本人已选的 203/EX-0049，断言不变。
-        M2-B1 适配：签署前传齐诊断证明+病假条两份（单份结算留待材料），断言不变。"""
+        """签署前上传有效材料，材料上传待办即完成，业务行仍待签署。
+        场景取本人已选的 203/EX-0049（绑定守卫后合法），断言不变。
+        签署前传齐诊断证明+病假条两份（单份结算留待材料），断言不变。"""
         t, u = env.tools, env.user_tools
         r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
         u.bind_student("S20230103")
@@ -338,7 +338,7 @@ class TestAwardAndCertificate:
         up = u.upload_material("certificates", r.cert_id, "身份证件影像", "id.jpg")
         u.confirm_action(r.sig_id)
         ce = t.db.certificates[r.cert_id]
-        assert ce.proxy_info.proxy_doc_upload_id == up.upload_id  # R16-A：证件绑定落库
+        assert ce.proxy_info.proxy_doc_upload_id == up.upload_id  # 证件绑定落库
         assert ce.status == "制作中"
         assert ce.proxy_info.valid_until == "2026-07-12 10:00"
         t.advance_time(hours=96)  # 6-16 10:00，未过 ready_at(6-17 10:00)
@@ -405,7 +405,7 @@ class TestWaitlistAndSpecialChannel:
 
     def test_special_channel_confirm_approve(self, env):
         t, u = env.tools, env.user_tools
-        # M2-B2 适配：第9条 10 工作日提交窗（03-15 关，窗至 03-27 23:59）——
+        # 第9条 10 工作日提交窗（03-15 关，窗至 03-27 23:59）——
         # 原 06-12 锚点已超窗会按新规拒收，链路测试改在窗内时点执行
         set_now(env, "2026-03-20 10:00")
         # S20220101 唯一开课 805 → 无替代 → 双重程序通过
@@ -421,7 +421,7 @@ class TestWaitlistAndSpecialChannel:
 
     def test_special_channel_reject_when_alternative(self, env):
         t, u = env.tools, env.user_tools
-        # M2-B2 适配：提交窗内时点（03-20，第9条 10 工作日窗至 03-27）
+        # 提交窗内时点（03-20，第9条 10 工作日窗至 03-27）
         set_now(env, "2026-03-20 10:00")
         # 造替代开课：CRS-805 另一门 2026SP 开放有余位
         from tau2.domains.campus.data_model import OfferingRow
@@ -439,7 +439,7 @@ class TestWaitlistAndSpecialChannel:
 
     def test_special_channel_student_rejects(self, env):
         t, u = env.tools, env.user_tools
-        # M2-B2 适配：提交窗内时点（03-20，第9条 10 工作日窗至 03-27）
+        # 提交窗内时点（03-20，第9条 10 工作日窗至 03-27）
         set_now(env, "2026-03-20 10:00")
         en = next(e for e in t.db.enrollments.values()
                   if e.student_id == "S20220101" and e.offering_id == "OF-2026SP-805-1" and e.status == "已选")
@@ -449,7 +449,7 @@ class TestWaitlistAndSpecialChannel:
         assert t.db.enrollments[en.enrollment_id].status == "已选"
 
     def test_special_channel_within_10_workday_window(self, env):
-        """M2-B2 正向（P1-4，H06 场景）：补退选窗口 03-15 关闭，第 10 个工作日 03-27 23:59
+        """正向（H06 场景）：补退选窗口 03-15 关闭，第 10 个工作日 03-27 23:59
         前（本例 03-20）发起特别通道成功，全链至已退课。"""
         set_now(env, "2026-03-20 10:00")
         r = env.tools.drop_course("S20220101", "EN-0011")
@@ -463,7 +463,7 @@ class TestWaitlistAndSpecialChannel:
         assert env.tools.db.course_offerings["OF-2026SP-301-1"].enrolled_count == 7  # 8→7 权威重算
 
     def test_special_channel_reject_after_10_workday_window(self, env):
-        """M2-B2 负向（P1-4）：窗口关闭超 10 个工作日（03-27 23:59 之后）→ 第9条拒收，
+        """负向：窗口关闭超 10 个工作日（03-27 23:59 之后）→ 第9条拒收，
         零写（EN 保持已选、不建 SIG）。"""
         set_now(env, "2026-03-30 10:00")
         with pytest.raises(ValueError,
@@ -546,7 +546,7 @@ class TestReadTools:
         assert "缺签署" in " ".join(df6.missing)
 
 
-# ------------------------------------------------------------------ M1 一致性守卫（A2–A7，R10 P1-3/5/6/8/9、P2-9）
+# ------------------------------------------------------------------ 一致性守卫（A2–A7）
 
 class TestM1ConsistencyGuards:
     def test_appeal_target_grade_in_window_succeeds(self, env):
@@ -554,7 +554,7 @@ class TestM1ConsistencyGuards:
         set_now(env, "2026-01-26 10:00")
         r = env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103",
                                     target_grade_id="GR-0033")
-        assert r.ticket_id in env.tools.db.tickets  # R16-A：target 仅判窗不落库
+        assert r.ticket_id in env.tools.db.tickets  # target 仅判窗不落库
 
     def test_appeal_target_grade_expired_rejected(self, env):
         # 种子时点 2026-06-12：GR-0033（2026-01-23 公布）早已越 5 工作日窗
@@ -587,7 +587,7 @@ class TestM1ConsistencyGuards:
         assert r.ticket_id in env.tools.db.tickets
 
     def test_appeal_target_args_do_not_change_ticket_row(self, env):
-        """R16-A：target_grade_id 仅判窗、不落库——传/不传的工单行完全一致，
+        """target_grade_id 仅判窗、不落库——传/不传的工单行完全一致，
         agent 显式传参不会使 DB 终态与金标缺省路径哈希分叉。"""
         set_now(env, "2026-01-26 10:00")
         r1 = env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103",
@@ -600,7 +600,7 @@ class TestM1ConsistencyGuards:
         assert d1 == d2
 
     def test_proxy_pickup_confirm_without_document_holds(self, env):
-        """R16-A（第33条闭环）：先签署、后传有效证件——签署时无证件不进制作，上传侧闭环推进。"""
+        """第33条闭环：先签署、后传有效证件——签署时无证件不进制作，上传侧闭环推进。"""
         t, u = env.tools, env.user_tools
         r = t.request_certificate("S20230103", "在读证明", delivery="委托代领",
                                   proxy_name="李受托", proxy_id_masked="****1234")
@@ -614,7 +614,7 @@ class TestM1ConsistencyGuards:
         assert ce.proxy_info.proxy_doc_upload_id == up.upload_id
 
     def test_proxy_pickup_returned_document_not_bound(self, env):
-        """R16-A：无效/退回材料不绑定证件位，签署确认保持拦截（第33条）。"""
+        """无效/退回材料不绑定证件位，签署确认保持拦截（第33条）。"""
         t, u = env.tools, env.user_tools
         r = t.request_certificate("S20230103", "在读证明", delivery="委托代领",
                                   proxy_name="李受托", proxy_id_masked="****1234")
@@ -627,7 +627,7 @@ class TestM1ConsistencyGuards:
         assert "尚未上传" in res.message
 
     def test_proxy_late_upload_validity_anchors_signing(self, env):
-        """R16-A-b（cursor M-1）：先签后传时授权码有效期锚=签署时刻（第33条），非上传时刻。"""
+        """先签后传时授权码有效期锚=签署时刻（第33条），非上传时刻。"""
         t, u = env.tools, env.user_tools
         r = t.request_certificate("S20230103", "在读证明", delivery="委托代领",
                                   proxy_name="李受托", proxy_id_masked="****1234")
@@ -641,7 +641,7 @@ class TestM1ConsistencyGuards:
         assert ce.proxy_info.valid_until == "2026-07-12 10:00"  # 签署时刻+30d（若锚上传时刻则=15:00）
 
     def test_service_requests_cert_missing_distinguishes_doc_vs_sign(self, env):
-        """R16-A-b（cursor M-2）：待签署二因分流——未签署=缺签署；已签署=缺受托人证件（第33条）。"""
+        """待签署二因分流——未签署=缺签署；已签署=缺受托人证件（第33条）。"""
         t, u = env.tools, env.user_tools
         r = t.request_certificate("S20230103", "在读证明", delivery="委托代领",
                                   proxy_name="李受托", proxy_id_masked="****1234")
@@ -658,7 +658,7 @@ class TestM1ConsistencyGuards:
         assert not next(x for x in rs.requests if x.request_id == r.cert_id).missing
 
     def test_campus_package_metadata(self):
-        """R16-D-1: runtime-readable benchmark metadata — engine (pyproject, tau2==1.0.1)
+        """Runtime-readable benchmark metadata — engine (pyproject, tau2==1.0.1)
         and campus benchmark versions are intentionally separate axes."""
         import re
 
@@ -693,12 +693,12 @@ class TestM1ConsistencyGuards:
             env.tools.request_certificate("S20230103", "在读证明", copy_count=0)
 
 
-# ------------------------------------------------------------------ M4 加固（campus v1.1-hardening）
+# ------------------------------------------------------------------ v1.1 加固
 
 class TestPreSettle:
-    """M4-D1 pre-settle（先结算后变更）：时钟推进后首次经 use_tool 分发的调用
-    （连只读）即触发结算。现役冻结时间下 pre-settle 为 no-op——由 A1 逐题哈希
-    与 a8ae237 基线逐位一致另行证明（M4 handoff）。"""
+    """pre-settle（先结算后变更）：时钟推进后首次经 use_tool 分发的调用
+    （连只读）即触发结算。现役冻结时间下 pre-settle 为 no-op——由金标重放逐题哈希
+    与基线逐位一致另行证明。"""
 
     def test_agent_use_tool_pre_settle(self, env):
         set_now(env, "2026-06-12 19:00")  # SIG-015（18:00）已过，未手动 sync
@@ -716,7 +716,7 @@ class TestPreSettle:
         assert env.tools.db.enrollments["EN-0070"].status == "失效"
 
 
-# M4-D1 回归矩阵路由表：6 路写动作 × {deadline−1min 成功 / deadline 当刻成功 /
+# 回归矩阵路由表：6 路写动作 × {deadline−1min 成功 / deadline 当刻成功 /
 # deadline+1min 拒绝}。边界语义写死：`now > deadline_at` 才拒（政策第2条 23:59
 # 截止＝deadline 当刻含边界内）。种子截止均取自 db/user_db 实测值；全部时点落在
 # 非维护窗（周日23:00–周一06:00）与非结账窗内。
@@ -780,7 +780,7 @@ MATRIX_ROUTES = {
 
 
 class TestDeadlineGuardMatrix:
-    """M4-D1 回归矩阵：6 路 × 3 时点（deadline−1min / 当刻 / +1min）＝18 例。
+    """回归矩阵：6 路 × 3 时点（deadline−1min / 当刻 / +1min）＝18 例。
     动作一律走 env.make_tool_call（真实分发路径，含 pre-settle），时钟 set_now
     精确控制；成功侧断言业务返回值，拒绝侧断言守卫文案（+upload 路零写）。"""
 
@@ -802,7 +802,7 @@ class TestDeadlineGuardMatrix:
                 assert len(env.user_tools.db.uploads) == uploads_before  # 守卫前置零写
 
     def test_reject_overdue_covered_by_status_check(self, env):
-        """M4-D1 决策 D-M4-2：reject_suggestion 不设独立 deadline 判断——
+        """reject_suggestion 不设独立 deadline 判断——
         pre-settle 先置"已过期"，status!=PENDING 检查即覆盖逾期拒签
         （专用文案"不可拒签"），以实现最简。"""
         env.user_tools.bind_student("S20230104")
@@ -816,7 +816,7 @@ class TestM4Hardening:
     """M4 D2/D3：特别通道卡死侧终态迁移 + 候补位次单调（分支隔离加固）。"""
 
     def test_special_channel_confirmed_past_deadline_migrates(self, env):
-        """M4-D2 构造性测试（R10 P1-2/R11 裁定）：种子带 deadline 的特别单
+        """构造性测试：种子带 deadline 的特别单
         （SIG-016=2026-06-20 23:59）confirm 后推时间过 deadline → settle 终态
         迁移：EN-0014 回'已选'（计数 _recount_enrolled 权威重算）+ SIG 置
         '已过期'（acted_at 保留确认时刻）。confirm 走直接方法调用以保留
@@ -841,7 +841,7 @@ class TestM4Hardening:
         assert off.enrolled_count == rows == 5  # EN-0014 计入后权威重算
 
     def test_waitlist_position_monotonic_after_abandon_rejoin(self, env):
-        """M4-D3：A（EN-0070 位次1）放弃后 C 重入——位次=活跃候补最大位次+1：
+        """位次单调：A（EN-0070 位次1）放弃后 C 重入——位次=活跃候补最大位次+1：
         C 得 3（与存活 B=EN-0159 的 2 不重复、排在 B 之后）；旧公式
         waitlist_count+1 会复用位次 2 造成重复，本测试即其回归屏障。"""
         t, u = env.tools, env.user_tools
@@ -920,7 +920,7 @@ M4_COUNTDOWN = [
 
 
 class TestD4Invariants:
-    """M4-D4 不变量测试：不引新依赖（无 hypothesis），确定性穷举定向构造小空间。
+    """不变量测试：不引新依赖（无 hypothesis），确定性穷举定向构造小空间。
     判据沿用 A1：③活跃候补位次唯一；②各 offering 计数==行数且无负数。"""
 
     @staticmethod

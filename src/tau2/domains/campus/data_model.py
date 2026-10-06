@@ -1,11 +1,11 @@
-"""campus 域数据模型与枚举 — 由 02-domain/contract/models.py v1.1 移植（S2A，基线 commit ea7ec13）。
+"""campus 域数据模型与枚举。
 
-接线（campus-domain-plan §0）：
+接线约定：
 - 行模型基类 = tau2.utils.pydantic_utils.BaseModelNoExtra（契约 NoExtra 等价物）；
 - CampusDB/UserDB 基类 = tau2.environment.db.DB（load/dump/get_hash 由官方提供）；
-- 字段集与枚举值与契约一字不改；发现契约缺口 → S2A handoff 决策日志回中枢，不得静默改。
+- 字段集与枚举值与契约一字不改；发现契约缺口须显式决策，不得静默改。
 
-全局约定（db-schema §1）：
+全局约定：
 - 时间一律 ISO 风格 `YYYY-MM-DD HH:MM` 字符串，服务器北京时间（政策第 2 条）；
 - `null`＝未发生，禁空串/0 代替；
 - 主键与表 dict 的键同值。
@@ -20,7 +20,7 @@ from tau2.environment.db import DB
 from tau2.utils.pydantic_utils import BaseModelNoExtra
 
 
-# ---------------------------------------------------------------- 枚举（db-schema §1/§3）
+# ---------------------------------------------------------------- 枚举
 
 
 class StudentStatus(str, Enum):
@@ -91,7 +91,7 @@ class GradeLevel(str, Enum):
 
 GRADE_POINTS = {
     "A": 4.0, "B+": 3.5, "B": 3.0, "C+": 2.5, "C": 2.0, "D": 1.0, "F": 0.0, "缺": 0.0,
-}  # 第 17 条换算表；"缓"/"未公布"无绩点。GPA 重算（validate_seed.py）与 S2A 共用。
+}  # 第 17 条换算表；"缓"/"未公布"无绩点。GPA 重算校验脚本与本表共用。
 
 
 class ExamType(str, Enum):
@@ -125,7 +125,7 @@ class HospitalLevel(str, Enum):
 
 
 class DeferralStatus(str, Enum):
-    PENDING_SIGN = "待签署"   # submit_deferral 成功即置（tools-spec §2）
+    PENDING_SIGN = "待签署"   # submit_deferral 成功即置
     PENDING_MATERIAL = "待材料"
     SUBMITTED = "已提交待审"
     APPROVED = "通过"
@@ -255,7 +255,7 @@ class SigDocType(str, Enum):
     AWARD_APP = "奖助学金申请表"
     APPEAL_BRIEF = "申诉书"
     PROXY_AUTH = "代领授权书"
-    SPECIAL_CHANNEL = "特别通道审批单"   # v1.1 IC 归一（tools-spec drop_course②）
+    SPECIAL_CHANNEL = "特别通道审批单"   # 特别通道归一类型
 
 
 class SigStatus(str, Enum):
@@ -320,12 +320,12 @@ class AppWindow(BaseModelNoExtra):
 
 
 class Maintenance(BaseModelNoExtra):
-    weekly: str = Field("周日23:00-周一06:00", description="第3条 P11：全部写操作不受理")
+    weekly: str = Field("周日23:00-周一06:00", description="第3条：全部写操作不受理")
     cert_batch: str = Field("每月最后工作日17:00-22:00", description="第31条 P12：证明暂停")
 
 
 class EnvState(BaseModelNoExtra):
-    """环境时间锚（db-schema §3.15，db.json 顶层保留键）。任务可覆写 current_time。"""
+    """环境时间锚（db.json 顶层保留键）。任务可覆写 current_time。"""
 
     current_time: str = Field(description="服务器北京时间 YYYY-MM-DD HH:MM")
     term: str = Field(description="当前学期，如 2026SP")
@@ -338,10 +338,10 @@ class ProxyInfo(BaseModelNoExtra):
     auth_sig_id: str = Field(description="指向 SIG- 代领授权书")
     valid_until: str = Field(description="授权码有效期＝签署日起 30 日（第33条）")
     proxy_doc_upload_id: Optional[str] = Field(
-        None, description="受托人证件影像 UP-（第33条：签署+有效证件齐备方可进入制作；R16-A）")
+        None, description="受托人证件影像 UP-（第33条：签署+有效证件齐备方可进入制作）")
 
 
-# ---------------------------------------------------------------- 行模型（db-schema §3.1–3.11）
+# ---------------------------------------------------------------- 行模型
 
 
 class StudentRow(BaseModelNoExtra):
@@ -349,7 +349,7 @@ class StudentRow(BaseModelNoExtra):
     name: str
     gender: str
     birth_date: str
-    id_card_masked: str = Field(description="只存掩码（脱敏铁律 E6）")
+    id_card_masked: str = Field(description="只存掩码（脱敏）")
     college: str
     major: str
     degree_class: str
@@ -359,7 +359,7 @@ class StudentRow(BaseModelNoExtra):
     expected_graduation_term: Optional[str] = None
     phone: str
     email: str
-    gpa: float = Field(description="缓存值：第17条公式重算须一致（validate_seed）；非在读冻结")
+    gpa: float = Field(description="缓存值：第17条公式重算须一致；非在读冻结")
     aid_pool_status: AidPoolStatus = AidPoolStatus.NOT_FILED
     aid_pool_valid_through: Optional[str] = Field(None, description="有效期至学年，如 2025-2026")
     warning_records: List[WarningRecord] = []
@@ -390,7 +390,7 @@ class OfferingRow(BaseModelNoExtra):
     classroom: str
     session_slots: List[SessionSlot]
     capacity: int
-    enrolled_count: int = Field(description="＝本学期 status=已选 的 EN 行数（validate_seed 校验）")
+    enrolled_count: int = Field(description="＝本学期 status=已选 的 EN 行数")
     waitlist_count: int = 0
     status: OfferingStatus
     start_date: str = Field(description="开课日（第7条窗口起算）")
@@ -423,7 +423,7 @@ class GradeRow(BaseModelNoExtra):
     grade_level: GradeLevel
     gpa_points: Optional[float] = Field(None, description="按第17条换算；'缓'为 null")
     is_final: bool = Field(False, description="终行标志：本学期在修课不得有 is_final=True（§5 规则2）")
-    recorded_at: Optional[str] = Field(None, description="公布时刻（第16条 P03 查分窗口起算列）")
+    recorded_at: Optional[str] = Field(None, description="公布时刻（第16条查分窗口起算列）")
     is_retake: bool = False
     replaces_grade_id: Optional[str] = Field(None, description="第19条：替换的原成绩行；所有 attempt 行永久保留")
 
@@ -563,7 +563,7 @@ class UploadRow(BaseModelNoExtra):
 
 
 class CampusDB(DB):
-    """主库 11 表 + env 保留键。JSON 布局：各表 主键→行对象（db-schema §0）。"""
+    """主库 11 表 + env 保留键。JSON 布局：各表 主键→行对象。"""
 
     env: EnvState
     students: Dict[str, StudentRow] = {}
@@ -579,7 +579,7 @@ class CampusDB(DB):
     tickets: Dict[str, TicketRow] = {}
 
     def get_statistics(self) -> Dict[str, Any]:
-        """各表行数（campus-domain-plan T2 验收点）。"""
+        """各表行数统计。"""
         return {
             "num_students": len(self.students),
             "num_courses": len(self.courses),

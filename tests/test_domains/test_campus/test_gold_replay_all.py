@@ -1,4 +1,4 @@
-"""Full gold-replay CI for all 50 campus tasks (M1 A1, MODIFY-PLAN §3).
+"""Full gold-replay CI for all 50 campus tasks.
 
 Aligns with upstream #499: the local evaluator (evaluator_env.py) swallows
 exceptions raised while replaying golden actions, so a half-executed gold DB
@@ -11,24 +11,22 @@ invariants plus replay determinism:
      the task's own main DB table;
   ② per-offering counts consistent and non-negative: `enrolled_count` equals
      the number of enrollment rows with status=已选 — caliber verified
-     empirically on all 50 task seeds (data_model.py:391 contract: special-
-     channel review rows are NOT counted; see M1 handoff); `waitlist_count`
+     empirically on all 50 task seeds (data_model.py contract: special-
+     channel review rows are NOT counted); `waitlist_count`
      equals the number of rows with status=候补中;
   ③ unique active waitlist positions per offering;
   ④ determinism: a second fresh environment replaying the same task yields
      identical get_db_hash()/get_user_db_hash().
 
-M1 baseline (2026-10-05): gold-action exceptions 0/50; invariants ①③④ pass
+Baseline (2026-10-05): gold-action exceptions 0/50; invariants ①③④ pass
 50/50; invariant ② was red on 4 task/offering pairs (count bookkeeping drift
-in task data / settle special-channel branches — root causes and remediation
-in 02-plan/handoffs/M1-20261005-A组补洞与披露.md). R11 approved landing this
-file with an explicit KNOWN_COUNT_GAPS exemption table (exactly four pairs).
+in task data / settle special-channel branches), temporarily covered by an
+explicit KNOWN_COUNT_GAPS exemption table (exactly four pairs).
 
-M2-B0 (2026-10-05): all four gaps fixed (authoritative `_recount_enrolled`
+All four gaps have since been fixed (authoritative `_recount_enrolled`
 in the special-channel settle branches + M03 initial-state count override),
-so the exemption table was emptied and invariant ② now applies to every
-task/offering without exception (R11-review-record.md §3, MODIFY-PLAN M2
-DoD①).
+so the exemption table is gone and invariant ② now applies to every
+task/offering without exception.
 """
 
 import pytest

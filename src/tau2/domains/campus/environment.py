@@ -1,20 +1,20 @@
-"""Environment for the campus domain (Tau2-ZH S2A).
+"""Environment for the campus domain (Tau2-ZH).
 
-Wiring notes (campus-domain-plan T1/T4/T9/T11):
+Wiring notes:
 - Dual DB: CampusTools owns CampusDB (`db`) and references UserDB (`user_db`) to GENERATE
   signature/todo handoff rows; CampusUserTools owns UserDB (`db`) and references CampusDB
   (`main_db`) to advance business state. One DB pair instance is shared across both
   toolkits; `get_db_hash`/`get_user_db_hash` therefore hash agent/user sides separately
-  (tools-spec §5 v1.1-F7 dual-hash equality).
+  (dual-hash equality).
 - `set_state` is overridden: the official base syncs the two toolkit db pointers onto one
   instance after `update_db` (single-DB assumption). Campus is a genuine two-DB domain
   (CampusDB ≠ UserDB, both extra="forbid"), so we apply agent_data/user_data to their own
   DBs, re-share the pair references, and delegate replay of initialization_actions and the
   message history to the base implementation with initialization_data=None.
-- `sync_tools` = deterministic settlement hook (T9): called after every tool call in live
+- `sync_tools` = deterministic settlement hook: called after every tool call in live
   runs (orchestrator), after every replayed mutating call, and once at set_state end —
   gold and predicted environments converge identically because settlement is a pure
-  function of DB state + env.current_time (T11).
+  function of DB state + env.current_time.
 """
 
 from pathlib import Path
@@ -49,7 +49,7 @@ class CampusEnvironment(Environment):
         super().__init__(domain_name, policy, tools, user_tools)
 
     def sync_tools(self):
-        """确定性结算钩子（T9）：见模块 docstring。"""
+        """确定性结算钩子：见模块 docstring。"""
         self.tools.settle()
 
     def set_state(
@@ -69,7 +69,7 @@ class CampusEnvironment(Environment):
         if user_data is not None:
             # 约定通道：user_data 可携带非 DB 键 "student_id" 绑定学生端身份
             # （UserDB 为 extra=forbid，须在覆写前摘出；亦可用 initialization_actions
-            # 调用 bind_student，两种等价）。见 S2A handoff 决策日志 D-S2A-1。
+            # 调用 bind_student，两种等价）。
             if "student_id" in user_data:
                 self.user_tools.bind_student(user_data["student_id"])
                 user_data = {k: v for k, v in user_data.items() if k != "student_id"}
@@ -85,7 +85,7 @@ class CampusEnvironment(Environment):
             strict=strict,
         )
 
-    # ------------------------------------------------- runner 钩子（T4）
+    # ------------------------------------------------- runner 钩子
 
     def advance_time(self, hours: int = 0, days: int = 0) -> str:
         """环境快进（非工具动作、不进用户轨迹）：推进 env.current_time 后由
@@ -119,8 +119,8 @@ def get_environment(
 
 
 def get_tasks(task_split_name: Optional[str] = "base") -> list[Task]:
-    """Load campus tasks. tasks.json 由 S2B（窗口⑤）在文档库 02-domain/tasks-seed/
-    产出、经 S3A 合并窗口落位 fork；落位前此处返回空列表（不阻断域注册）。"""
+    """Load campus tasks from the packaged tasks.json（缺失时返回空列表，
+    不阻断域注册）。"""
     if not Path(CAMPUS_TASK_SET_PATH).exists():
         return []
     tasks = [Task.model_validate(task) for task in load_file(str(CAMPUS_TASK_SET_PATH))]
