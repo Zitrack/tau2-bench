@@ -4,7 +4,7 @@
 >
 > **[简体中文](#项目简介与榜单)** · Domain PR: **[#596](https://github.com/sierra-research/tau2-bench/pull/596)** · Dataset: **[ZitrackHF/tau2-zh-campus](https://huggingface.co/datasets/ZitrackHF/tau2-zh-campus)** · Upstream README: [`main` branch](https://github.com/sierra-research/tau2-bench)
 >
-> **Code pin**: benchmark off tag [`campus-v1.1.3`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.3) or branch `dev/campus` — this default branch is a showcase snapshot, not the benchmark code.
+> **Code pin**: benchmark off tag [`campus-v1.1.4`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.4) or branch `dev/campus` — this default branch is a showcase snapshot, not the benchmark code.
 
 The full domain documentation lives at [`src/tau2/domains/campus/README.md`](src/tau2/domains/campus/README.md). This root page is the project showcase.
 
@@ -28,7 +28,7 @@ The full domain documentation lives at [`src/tau2/domains/campus/README.md`](src
 | 4 | GLM-5.3-Flash | 0.790 | 0.680 | 5.12 | 2.192 |
 | 5 | MiMo-V2.6-Pro | 0.855 | 0.660 | 5.19 | 1.816 |
 
-- **v1.1.1 patch (2026-10-05/06)**: consistency fixes (policy↔code↔gold) — tasks H01 (two-document illness deferrals) and H06 (special-channel 10-workday window, re-anchored) were corrected and all rows re-anchored via a 40-sim overlay; per-row pre-patch values are preserved. Rows 3/4 swap places at equal pass^4 (0.680) by pass^1. See the domain [Changelog](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-changelog) and PR #596 updates (parts 1–3).
+- **v1.1.1 patch (2026-10-05/06)**: consistency fixes (policy↔code↔gold) — tasks H01 (two-document illness deferrals) and H06 (special-channel 10-workday window, re-anchored) were corrected and all rows re-anchored via a 40-sim overlay; per-row pre-patch values are preserved. Rows 3/4 swap places at equal pass^4 (0.680) by pass^1. See the domain [Changelog](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-changelog) and PR #596 updates (parts 1–5).
 - user simulator + NL judge pinned to **DeepSeek V4.1-Flash** (`deepseek-flash`) for every row; temperature 0; seed 20261004; max_steps 60.
 - **E14 t1 was an upstream-infrastructure outage** (4 retry waves, `provider temporarily unavailable`): excluding that trial gives MiMo 0.840/0.660 pre-patch and 0.860/0.680 on the current v1.1.1 overlay — both calibers documented.
 - GOAT credits include prompt-cache effects (GLM-5.3: no cache benefit, 1.63 cr/M; MiMo: 98.9% cache hit, 0.12 cr/M) — a 13× billing spread across rows, disclosed as-is.
@@ -38,6 +38,7 @@ Full protocol, judge calibration (132-sample human study), and failure typology:
 ## Reproduce
 
 ```bash
+git clone --branch campus-v1.1.4 https://github.com/Zitrack/tau2-bench && cd tau2-bench
 uv sync
 pytest tests/test_domains/test_campus          # 146 tests
 uv run tau2 run --domain campus --agent llm_agent \
@@ -45,6 +46,15 @@ uv run tau2 run --domain campus --agent llm_agent \
   --user user_simulator --user-llm deepseek/deepseek-flash \
   --task-split-name base
 ```
+
+## Changelog
+
+Latest first; full history in [Releases](https://github.com/Zitrack/tau2-bench/releases) and the domain [Changelog](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-changelog):
+
+- **v1.1.4 (2026-10-06)** — round-4 review fixes: authorization-code validity anchored to the **signing time** (art. 33); service requests distinguish missing-ID vs missing-sign (no more re-sign steering). [Tag & manifest](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.4).
+- **v1.1.3 (2026-10-06)** — proxy-pickup document closure (art. 33); ticket `target_grade_id` is window-input only (art. 16); public `tasks.json` stripped of internal QA metadata.
+- **v1.1.2 (2026-10-06)** — undeclared hospital level → returned-for-supplement (art. 12); confirmation receipts agree with settled state.
+- **v1.1.1 (2026-10-05/06)** — hardening: pre-settle, user-side deadline guards, special-channel terminal transition, monotonic waitlist positions; H01/H06 gold re-anchored (40-sim overlay).
 
 Dataset (tasks / policy / seed DBs): [huggingface.co/datasets/ZitrackHF/tau2-zh-campus](https://huggingface.co/datasets/ZitrackHF/tau2-zh-campus)
 
@@ -73,7 +83,7 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 >
 > Domain PR: **[#596](https://github.com/sierra-research/tau2-bench/pull/596)** · 数据集：**[ZitrackHF/tau2-zh-campus](https://huggingface.co/datasets/ZitrackHF/tau2-zh-campus)** · 上游 README：[`main` 分支](https://github.com/sierra-research/tau2-bench)
 >
-> **代码锚点**：请基于 tag [`campus-v1.1.3`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.3) 或分支 `dev/campus` 跑基准——本默认分支为展示快照，非基准代码。
+> **代码锚点**：请基于 tag [`campus-v1.1.4`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.4) 或分支 `dev/campus` 跑基准——本默认分支为展示快照，非基准代码。
 
 完整的域文档位于 [`src/tau2/domains/campus/README.md`](src/tau2/domains/campus/README.md)，本页为项目展示主页。
 
@@ -97,7 +107,7 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 | 4 | GLM-5.3-Flash | 0.790 | 0.680 | 5.12 | 2.192 |
 | 5 | MiMo-V2.6-Pro | 0.855 | 0.660 | 5.19 | 1.816 |
 
-- **v1.1.1 补丁（2026-10-05/06）**：一致性整改（政策↔代码↔金标）——H01（因病缓考双材料）与 H06（特别通道十工作日窗，重锚）两题修复后，经 40 sims overlay 对全部 5 行重跑重锚；各行 pre-patch 原值保留。pass^4 同为 0.680 的第 3/4 名按 pass^1 排序互换。详见域 [变更记录](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-变更记录) 与 PR #596 Updates（part 1–3）。
+- **v1.1.1 补丁（2026-10-05/06）**：一致性整改（政策↔代码↔金标）——H01（因病缓考双材料）与 H06（特别通道十工作日窗，重锚）两题修复后，经 40 sims overlay 对全部 5 行重跑重锚；各行 pre-patch 原值保留。pass^4 同为 0.680 的第 3/4 名按 pass^1 排序互换。详见域 [变更记录](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-变更记录) 与 PR #596 Updates（part 1–5）。
 - user simulator 与 NL judge 每行钉在 **DeepSeek V4.1-Flash**（`deepseek-flash`）；temperature=0；seed=20261004；max_steps=60。
 - **E14 t1 为上游基础设施故障**（4 波重试，`provider temporarily unavailable`）：剔除该 trial，MiMo 修复前 0.840/0.660、现行 v1.1.1 overlay 0.860/0.680——两种口径均已披露。
 - GOAT credits 含 prompt 缓存收益（GLM-5.3 无缓存收益 1.63 cr/M；MiMo 98.9% 命中 0.12 cr/M）——13× 计费差异如实披露。
@@ -107,6 +117,7 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 ## 复现
 
 ```bash
+git clone --branch campus-v1.1.4 https://github.com/Zitrack/tau2-bench && cd tau2-bench
 uv sync
 pytest tests/test_domains/test_campus          # 146 项测试
 uv run tau2 run --domain campus --agent llm_agent \
@@ -114,6 +125,15 @@ uv run tau2 run --domain campus --agent llm_agent \
   --user user_simulator --user-llm deepseek/deepseek-flash \
   --task-split-name base
 ```
+
+## 变更日志
+
+最新在上；完整历史见 [Releases](https://github.com/Zitrack/tau2-bench/releases) 与域 [变更记录](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-变更记录)：
+
+- **v1.1.4（2026-10-06）**——第四轮评审修复：代领授权码有效期锚定**签署时刻**（第 33 条）；服务单据查询区分"缺证件"与"缺签署"（不再误导重新签署）。[Tag 与版本清单](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.4)。
+- **v1.1.3（2026-10-06）**——代领证件闭环（第 33 条）；工单 `target_grade_id` 仅作判窗输入（第 16 条）；公开 `tasks.json` 剥离内部 QA 元数据。
+- **v1.1.2（2026-10-06）**——未申报医院等级 → 退回补报（第 12 条）；确认回执与结算终态一致。
+- **v1.1.1（2026-10-05/06）**——加固：pre-settle、用户侧 deadline 守卫、特别通道终态迁移、候补位次单调；H01/H06 金标重锚（40 sims overlay）。
 
 数据集（任务集 / 政策 / 种子库）：[huggingface.co/datasets/ZitrackHF/tau2-zh-campus](https://huggingface.co/datasets/ZitrackHF/tau2-zh-campus)
 
