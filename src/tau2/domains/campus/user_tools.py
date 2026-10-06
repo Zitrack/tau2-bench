@@ -217,7 +217,8 @@ class CampusUserTools(ToolKitBase):
     def upload_material(self, ref_type: str, ref_id: str, doc_type: str,
                         file_name: str, hospital_level: str = "") -> UploadResult:
         """上传证明材料并挂接到业务记录（DF-/APP-/CE-/TK-）。医院等级由入参声明，
-        环境按第12条判定'其他机构→无效材料'。维护窗口内拒绝（第3条）。
+        环境按第12条三分类判定：声明'其他机构'=无效材料（结算驳回）；未申报（空串/'无'）
+        =已退回补报；三甲/校医院指定门诊=有效。维护窗口内拒绝（第3条）。
 
         Args:
             ref_type: deferral_requests / scholarship_apps / certificates / tickets。
@@ -258,7 +259,15 @@ class CampusUserTools(ToolKitBase):
         medical_doc = doc_type in (UploadDocType.MEDICAL_DIAGNOSIS.value, UploadDocType.SICK_LEAVE.value)
         status = UploadStatus.UPLOADED
         note = ""
-        if medical_doc or hospital_level not in ("", HospitalLevel.NONE.value):
+        # M6-F1 第12条三分类（医疗类材料）：
+        #   声明"其他机构"或任何非 canonical 声明值 → 无效材料 → 结算驳回（第12条原文）；
+        #   未申报（空串/"无"）→ 已退回，补报等级后重新上传，不作无效处理；
+        #   canonical（三甲/校医院指定门诊）→ 有效。
+        # 等级声明值的变体归一化仍为已披露的 future work。
+        if medical_doc and hospital_level in ("", HospitalLevel.NONE.value):
+            status = UploadStatus.RETURNED
+            note = "未申报医院等级，暂不计入有效材料；请补充三甲/校医院指定门诊等级后重新上传（第12条）"
+        elif medical_doc or hospital_level not in ("", HospitalLevel.NONE.value):
             if hospital_level not in VALID_MEDICAL_LEVELS:
                 status = UploadStatus.INVALID
                 note = "（第12条）其他医疗机构或私人诊所出具的证明视为无效材料。"
@@ -284,6 +293,11 @@ class CampusUserTools(ToolKitBase):
                     row.reviewed_at = self.now_str
                     self._complete_todo(TodoType.DEFERRAL_UPLOAD.value, ref_id)
                     message += f"；缓考申请 {ref_id} 已被驳回（第12条）。"
+            elif status == UploadStatus.RETURNED:
+                # D-M6-1：已退回（未申报）不推进状态机、不办结上传待办——退回补报语义；
+                # 结算侧 valid_docs 只计"已上传/已核验"，已退回不计入 → 必要集合不齐
+                # → 既有"待材料"路径（settle 零改动自洽）。补传带等级材料后走既有迁移。
+                pass
             elif row.status == DeferralStatus.PENDING_MATERIAL.value:
                 row.status = DeferralStatus.SUBMITTED.value
                 self._complete_todo(TodoType.DEFERRAL_UPLOAD.value, ref_id)

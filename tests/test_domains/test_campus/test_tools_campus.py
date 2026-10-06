@@ -186,6 +186,61 @@ class TestDeferralChain:
         env.sync_tools()
         assert t.db.deferral_requests[r.request_id].status == "待材料"
 
+    def test_undeclared_level_returned_not_rejected(self, env):
+        """M6-F1（Bugbot #4185973234）：第12条只对声明'其他机构'的材料定无效→驳回；
+        第二份医疗材料漏报医院等级＝已退回（补报），结算走既有'待材料'路径而非驳回
+        （第一份已有效的诊断证明不被作废）；补传带等级的病假条后结算通过、双材料核验。"""
+        t, u = env.tools, env.user_tools
+        r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
+        u.bind_student("S20230103")
+        u.confirm_action(r.sig_id)  # 无材料 → 待材料
+        up1 = u.upload_material("deferral_requests", r.request_id, "诊断证明", "市一院.pdf", "三甲")
+        assert t.user_db.uploads[up1.upload_id].status == "已上传"
+        up2 = u.upload_material("deferral_requests", r.request_id, "病假条", "病假条.pdf")  # 未申报
+        assert t.user_db.uploads[up2.upload_id].status == "已退回"
+        assert "未申报医院等级" in (t.user_db.uploads[up2.upload_id].review_note or "")
+        env.sync_tools()
+        df = t.db.deferral_requests[r.request_id]
+        assert df.status == "待材料"  # 非驳回：未申报 ≠ 无效材料
+        assert df.reject_reason is None
+        assert t.user_db.uploads[up1.upload_id].status == "已上传"  # 第一份未被作废
+        up3 = u.upload_material("deferral_requests", r.request_id, "病假条", "病假条-补报.pdf", "三甲")
+        env.sync_tools()
+        assert df.status == "通过"
+        assert t.user_db.uploads[up1.upload_id].status == "已核验"
+        assert t.user_db.uploads[up3.upload_id].status == "已核验"
+        assert t.user_db.uploads[up2.upload_id].status == "已退回"  # 退回行不参与核验
+
+    def test_none_level_treated_as_undeclared(self, env):
+        """M6-F1：显式声明'无'与空串同路径＝未申报 → 已退回补报（非无效材料、非驳回）。"""
+        t, u = env.tools, env.user_tools
+        r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
+        u.bind_student("S20230103")
+        u.confirm_action(r.sig_id)
+        u.upload_material("deferral_requests", r.request_id, "诊断证明", "市一院.pdf", "三甲")
+        up = u.upload_material("deferral_requests", r.request_id, "病假条", "病假条.pdf", "无")
+        row = t.user_db.uploads[up.upload_id]
+        assert row.status == "已退回"
+        assert "未申报医院等级" in (row.review_note or "")
+        env.sync_tools()
+        df = t.db.deferral_requests[r.request_id]
+        assert df.status == "待材料"  # 非驳回
+        assert df.reject_reason is None
+
+    def test_other_institution_still_rejects(self, env):
+        """M6-F1 边界（第12条原文不变）：声明'其他机构'＝无效材料→整单驳回；
+        即便第一份三甲诊断证明已有效，第二份'其他机构'仍触发驳回。"""
+        t, u = env.tools, env.user_tools
+        r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
+        u.bind_student("S20230103")
+        u.confirm_action(r.sig_id)
+        u.upload_material("deferral_requests", r.request_id, "诊断证明", "市一院.pdf", "三甲")
+        up = u.upload_material("deferral_requests", r.request_id, "病假条", "小诊所说.pdf", "其他机构")
+        assert t.user_db.uploads[up.upload_id].status == "无效材料"
+        df = t.db.deferral_requests[r.request_id]
+        assert df.status == "驳回"
+        assert "无效材料" in df.reject_reason
+
     def test_upload_before_sign_completes_upload_todo(self, env):
         """D-S3A-3：签署前上传有效材料，材料上传待办即完成，业务行仍待签署。
         M1-A3 适配：场景从 504/EX-0050（该生无选课行，绑定守卫后非法）改为本人已选的 203/EX-0049，断言不变。

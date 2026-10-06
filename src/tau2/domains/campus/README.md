@@ -10,7 +10,7 @@
 - **Policy**: `data/tau2/domains/campus/policy.md` — a 36-article service regulation for the fictional university, deliberately packed with time-boundary traps (补退选窗口、缓考时限、维护窗口、月末结账、申诉逐级…).
 - **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **17 refusal tasks** (privacy, 越级申诉, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
 - **Data**: `db.json` (14 tables) + `user_db.json` (students act through their own app).
-- **Tests**: `tests/test_domains/test_campus/` — 137 pytest cases (tools, replay, contract, full 50-task gold-replay CI, deadline-guard matrix, state-machine invariants).
+- **Tests**: `tests/test_domains/test_campus/` — 140 pytest cases (tools, replay, contract, full 50-task gold-replay CI, deadline-guard matrix, state-machine invariants).
 
 ## 2. Dual-control design
 
@@ -58,7 +58,7 @@ Scoring-contract note: all 50 tasks ship `reward_basis=[DB, COMMUNICATE]` (the u
 # install (Python >=3.12,<3.14)
 uv sync
 
-# domain tests (137 cases)
+# domain tests (140 cases)
 uv run pytest tests/test_domains/test_campus
 
 # validate data
@@ -124,7 +124,7 @@ env_assertions 契约说明：50 题 reward_basis 均为 [DB, COMMUNICATE]（上
 
 ```sh
 uv sync
-uv run pytest tests/test_domains/test_campus        # 137 项测试
+uv run pytest tests/test_domains/test_campus        # 140 项测试
 uv run tau2 check-data                              # 数据校验
 uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek-flash \
   --num-trials 4 --task-split-name base
@@ -141,6 +141,7 @@ uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek
 
 ## 8. Changelog
 
+- **v1.1.2 (2026-10-06) — undeclared hospital level returns material for re-upload (art. 12).** A medical document uploaded without declaring `hospital_level` (empty or `无`) is now marked `已退回` (returned for supplement) instead of `无效材料`; only a declared `其他机构` (or other non-canonical value) constitutes an invalid material → rejection per art. 12, so an incomplete illness-deferral set settles back to 待材料 instead of being rejected and discarding already-valid documents. Zero impact on the published suite: all medical uploads among the 50 tasks declare compliant levels (M05/H01 = 三甲; M16/H07 are non-medical), gold-replay CI 50/50, tests 140 green. Variant-level normalization remains disclosed future work.
 - **v1.1.1 (2026-10-06) — hardening.** Pre-settle before every tool call (agent & user sides); user-side deadline guards on signature confirmation and material upload (art. 8/12); special-channel stuck-state terminal transition (confirmed-but-overdue → revert + expire); monotonic waitlist positions (max+1, no position reuse after abandonment). Zero live-impact on the published suite proven by the 50-task gold-replay CI (per-task DB/user-DB hashes byte-identical before/after the change).
 - **v1.1 (2026-10-05) — consistency fixes (PR #596 updates, part 1/2).** Full gold-replay CI (exceptions-as-failures + terminal-state invariants; countermeasure aligned with upstream issue #499); optional `target_grade_id` appeal binding (art. 16); deferral↔enrollment binding (art. 12/10); illness deferrals restricted to post-exam filing (art. 12); waitlist ACTIVE-status / suspended-offering guards (art. 10/8); `copy_count ≥ 1` (art. 32); authoritative `enrolled_count` recount in special-channel settlement; illness two-document requirement + H01 gold update (art. 12(2)); special-channel 10-workday submission window + H06 re-anchor (art. 9); policy v1.4 (art. 2/13). Scoring-contract note: `env_assertions` are diagnostic outputs and do not gate the reward. Leaderboard re-anchored via a 40-sim overlay rerun (H01/H06, all 5 rows).
 - **v1.0.1 (2026-10-03) — initial release.** Campus domain, 50 tasks (easy 15 / medium 20 / hard 15, incl. 17 refusal tasks), dual-control, policy v1.3, 5-row leaderboard.
