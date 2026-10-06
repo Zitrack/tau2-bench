@@ -14,20 +14,22 @@
 - **Dual-control environment** — the simulated *student* operates their own campus-app tools (upload documents, confirm/sign); the agent can only **guide**, hitting τ²'s core finding that guiding a user is harder than acting alone.
 - **50 tasks** (15 easy / 20 medium / 15 hard, incl. 17 refusal tasks scored by zero-DB-write), a seeded 14-table database, 15 agent tools + 4 student tools, all-Chinese error messages.
 - **Deterministic scoring** — DB dual-hash (agent + user sides) + entity-substring checks; no LLM judge in the reward path.
-- **49 unit tests** covering the error catalog and state machines; forward-replay determinism verified.
+- **137 tests** covering the error catalog, state machines, deadline-guard matrix, and a **50-task gold-replay CI** (any exception or invariant violation fails the suite; countermeasure aligned with upstream #499).
 
 ## Leaderboard — 5 LLMs × 50 tasks × 4 trials (= 200 simulations per model)
 
 | # | Model (agent under test) | pass^1 | pass^4 | avg turns | GOAT credits |
 |---|---|---|---|---|---|
-| 1 | **DeepSeek V4.1-Flash** (anchor) | 0.975 | 0.900 | 6.08 | — (official API) |
+| 1 | **DeepSeek V4.1-Flash** (anchor) | 0.975 | 0.900 | 6.07 | — (official API) |
 | 2 | Qwen3.8-Flash | 0.860 | 0.720 | 5.41 | 3.780 |
-| 3 | MiMo-V2.6-Pro | 0.835 | 0.640 | 5.22 | 1.816 |
-| 4 | GLM-5.3 | 0.785 | 0.660 | 5.30 | 23.195 |
-| 5 | GLM-5.3-Flash | 0.780 | 0.680 | 5.13 | 2.192 |
+| 3 | GLM-5.3 | 0.805 | 0.680 | 5.17 | 23.195 |
+| 4 | GLM-5.3-Flash | 0.790 | 0.680 | 5.12 | 2.192 |
+| 5 | MiMo-V2.6-Pro | 0.855 | 0.660 | 5.19 | 1.816 |
+
+- **v1.1.1 patch (2026-10-05/06)**: consistency fixes (policy↔code↔gold) — tasks H01 (two-document illness deferrals) and H06 (special-channel 10-workday window, re-anchored) were corrected and all rows re-anchored via a 40-sim overlay; per-row pre-patch values are preserved. Rows 3/4 swap places at equal pass^4 (0.680) by pass^1. See the domain [Changelog](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-changelog) and PR #596 updates (parts 1–3).
 
 - user simulator + NL judge pinned to **DeepSeek V4.1-Flash** (`deepseek-flash`) for every row; temperature 0; seed 20261004; max_steps 60.
-- **E14 t1 was an upstream-infrastructure outage** (4 retry waves, `provider temporarily unavailable`): as-run numbers above; excluding that trial, MiMo = 0.840/0.660.
+- **E14 t1 was an upstream-infrastructure outage** (4 retry waves, `provider temporarily unavailable`): excluding that trial gives MiMo 0.840/0.660 pre-patch and 0.860/0.680 on the current v1.1.1 overlay — both calibers documented.
 - GOAT credits include prompt-cache effects (GLM-5.3: no cache benefit, 1.63 cr/M; MiMo: 98.9% cache hit, 0.12 cr/M) — a 13× billing spread across rows, disclosed as-is.
 
 Full protocol, judge calibration (132-sample human study), and failure typology: [`src/tau2/domains/campus/README.md`](src/tau2/domains/campus/README.md) and the PR description in [#596](https://github.com/sierra-research/tau2-bench/pull/596).
@@ -36,7 +38,7 @@ Full protocol, judge calibration (132-sample human study), and failure typology:
 
 ```bash
 uv sync
-pytest tests/test_domains/test_campus          # 49 tests
+pytest tests/test_domains/test_campus          # 137 tests
 uv run tau2 run --domain campus --agent llm_agent \
   --agent-llm <provider>/<model> \
   --user user_simulator --user-llm deepseek/deepseek-flash \
@@ -66,7 +68,7 @@ Dataset (tasks / policy / seed DBs): [huggingface.co/datasets/ZitrackHF/tau2-zh-
 | `dev/campus` | the exact branch the upstream PR #596 is filed from |
 | `src/tau2/domains/campus/` | domain code: `data_model / user_data_model / tools / user_tools / environment` |
 | `data/tau2/domains/campus/` | `policy.md` + `db.json` + `user_db.json` + `tasks.json` (50) + `split_tasks.json` |
-| `tests/test_domains/test_campus/` | 49 tests |
+| `tests/test_domains/test_campus/` | 137 tests |
 
 ## License & credits
 
