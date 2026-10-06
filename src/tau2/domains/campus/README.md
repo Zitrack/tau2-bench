@@ -102,6 +102,16 @@ Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.0798
 > [τ²-bench](https://github.com/sierra-research/tau2-bench)（MIT 许可）的域扩展，计分钉死官方 **v1.0.1**。
 > 本域全部机构、人物、记录均**虚构**（学校为"青川大学"，虚构校名）；政策文本由公开规章改写脱敏，包内不含任何真实个人数据。
 
+## 8. Changelog
+
+- **v1.1.2 (2026-10-06) — undeclared hospital level returns material for re-upload (art. 12).** A medical document uploaded without declaring `hospital_level` (empty or `无`) is now marked `已退回` (returned for supplement) instead of `无效材料`; only a declared `其他机构` (or other non-canonical value) constitutes an invalid material → rejection per art. 12, so an incomplete illness-deferral set settles back to 待材料 instead of being rejected and discarding already-valid documents. Zero impact on the published suite: all medical uploads among the 50 tasks declare compliant levels (M05/H01 = 三甲; M16/H07 are non-medical), gold-replay CI 50/50, tests 140 green. Variant-level normalization remains disclotests 141 green. Follow-up: `confirm_action` now judges "enter 待材料" by usable (non-returned) uploads, so a confirmation receipt no longer misreports 已提交待审 when only returned materials exist — response and settled state agree.
+- **v1.1.1 (2026-10-06) — hardening.** Pre-settle before every tool call (agent & user sides); user-side deadline guards on signature confirmation and material upload (art. 8/12); special-channel stuck-state terminal transition (confirmed-but-overdue → revert + expire); monotonic waitlist positions (max+1, no position reuse after abandonment). Zero live-impact on the published suite proven by the 50-task gold-replay CI (per-task DB/user-DB hashes byte-identical before/after the change).
+- **v1.1 (2026-10-05) — consistency fixes (PR #596 updates, part 1/2).** Full gold-replay CI (exceptions-as-failures + terminal-state invariants; countermeasure aligned with upstream issue #499); optional `target_grade_id` appeal binding (art. 16); deferral↔enrollment binding (art. 12/10); illness deferrals restricted to post-exam filing (art. 12); waitlist ACTIVE-status / suspended-offering guards (art. 10/8); `copy_count ≥ 1` (art. 32); authoritative `enrolled_count` recount in special-channel settlement; illness two-document requirement + H01 gold update (art. 12(2)); special-channel 10-workday submission window + H06 re-anchor (art. 9); policy v1.4 (art. 2/13). Scoring-contract note: `env_assertions` are diagnostic outputs and do not gate the reward. Leaderboard re-anchored via a 40-sim overlay rerun (H01/H06, all 5 rows).
+- **v1.0.1 (2026-10-03) — initial release.** Campus domain, 50 tasks (easy 15 / medium 20 / hard 15, incl. 17 refusal tasks), dual-control, policy v1.3, 5-row leaderboard.
+- **证书 / 医院字段说明**：证书进度查询不返回 `ready_at` 与代领授权余期（申请响应含 `ready_at`）；`hospital_level` 仅收 `三甲` / `校医院指定门诊` canonical 值，变体写法不归一。
+
+---
+
 ## 1. 域概要
 
 `campus` 是为中文高校教务场景**原生设计**（非翻译）的域：选课/补退选、考试缓考、成绩查分与申诉、奖助学金、证明开具、学籍与工单。政策（36 条，含补退选窗口、缓考时限、维护窗口、月末结账、逐级申诉等时限坑）、数据库（14 表）、50 题任务（easy 15 / medium 20 / hard 15，含 17 道拒绝题）与 persona 全部中文原生；判分口径与官方同构（`[DB, COMMUNICATE]` + `env_assertions`，不用 ACTION），结果可与官方榜单同读。
@@ -139,15 +149,7 @@ uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek
 - **主体授权＝政策遵从测试面，与上游同构**：agent 侧工具接受任意 `student_id`（上游 retail 同构行为）；campus 的差异化在学生端——`bind_student` 初始化绑定 + 上传属主校验（"记录不属于本人"，政策第 4 条）。audit-log / 越权维度列为 future work。
 - **未建模清单**：跨学院审批流转、休学后的状态传播、转专业工作流、奖学金排名表（排名类资格不经工具校验）。法定节假日已随政策 v1.4 对齐口径（时限计算不引入节假日调整），不再是待建模项。
 
-## 8. Changelog
-
-- **v1.1.2 (2026-10-06) — undeclared hospital level returns material for re-upload (art. 12).** A medical document uploaded without declaring `hospital_level` (empty or `无`) is now marked `已退回` (returned for supplement) instead of `无效材料`; only a declared `其他机构` (or other non-canonical value) constitutes an invalid material → rejection per art. 12, so an incomplete illness-deferral set settles back to 待材料 instead of being rejected and discarding already-valid documents. Zero impact on the published suite: all medical uploads among the 50 tasks declare compliant levels (M05/H01 = 三甲; M16/H07 are non-medical), gold-replay CI 50/50, tests 140 green. Variant-level normalization remains disclotests 141 green. Follow-up: `confirm_action` now judges "enter 待材料" by usable (non-returned) uploads, so a confirmation receipt no longer misreports 已提交待审 when only returned materials exist — response and settled state agree.
-- **v1.1.1 (2026-10-06) — hardening.** Pre-settle before every tool call (agent & user sides); user-side deadline guards on signature confirmation and material upload (art. 8/12); special-channel stuck-state terminal transition (confirmed-but-overdue → revert + expire); monotonic waitlist positions (max+1, no position reuse after abandonment). Zero live-impact on the published suite proven by the 50-task gold-replay CI (per-task DB/user-DB hashes byte-identical before/after the change).
-- **v1.1 (2026-10-05) — consistency fixes (PR #596 updates, part 1/2).** Full gold-replay CI (exceptions-as-failures + terminal-state invariants; countermeasure aligned with upstream issue #499); optional `target_grade_id` appeal binding (art. 16); deferral↔enrollment binding (art. 12/10); illness deferrals restricted to post-exam filing (art. 12); waitlist ACTIVE-status / suspended-offering guards (art. 10/8); `copy_count ≥ 1` (art. 32); authoritative `enrolled_count` recount in special-channel settlement; illness two-document requirement + H01 gold update (art. 12(2)); special-channel 10-workday submission window + H06 re-anchor (art. 9); policy v1.4 (art. 2/13). Scoring-contract note: `env_assertions` are diagnostic outputs and do not gate the reward. Leaderboard re-anchored via a 40-sim overlay rerun (H01/H06, all 5 rows).
-- **v1.0.1 (2026-10-03) — initial release.** Campus domain, 50 tasks (easy 15 / medium 20 / hard 15, incl. 17 refusal tasks), dual-control, policy v1.3, 5-row leaderboard.
-- **证书 / 医院字段说明**：证书进度查询不返回 `ready_at` 与代领授权余期（申请响应含 `ready_at`）；`hospital_level` 仅收 `三甲` / `校医院指定门诊` canonical 值，变体写法不归一。
-
-## 9. 变更记录（中文摘要）
+## 8. 变更记录
 
 - **v1.1.2（2026-10-06）——评审跟进**：医疗类材料未申报医院等级（空串/"无"）改为"已退回补报"而非"无效材料"；仅声明"其他机构"（或其他非 canonical 声明值）才构成无效驳回（第 12 条原文）；`confirm_action` 按可用材料（非退回）判定"进入待材料"，回执不再误报"已提交待审"。对现役 50 题零影响（金标重放 CI 50/50，141 项测试全绿）。
 - **v1.1.1（2026-10-06）——加固**：所有工具调用前置结算（pre-settle，agent/学生两侧）；用户侧签署确认与材料上传 deadline 守卫（第 8/12 条）；特别通道"已确认但逾期"终态迁移（回退+过期）；候补位次单调（max+1，放弃后不复用位次）。50 题双库哈希逐字节一致证明零现役影响。
