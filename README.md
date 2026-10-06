@@ -16,7 +16,7 @@ The full domain documentation lives at [`src/tau2/domains/campus/README.md`](src
 - **Dual-control environment** — the simulated *student* operates their own campus-app tools (upload documents, confirm/sign); the agent can only **guide**, hitting τ²'s core finding that guiding a user is harder than acting alone.
 - **50 tasks** (15 easy / 20 medium / 15 hard, incl. 17 refusal tasks scored by zero-DB-write), a seeded 14-table database, 15 agent tools + 4 student tools, all-Chinese error messages.
 - **Deterministic scoring** — DB dual-hash (agent + user sides) + entity-substring checks; no LLM judge in the reward path.
-- **141 tests** covering the error catalog, state machines, deadline-guard matrix, and a **50-task gold-replay CI** (any exception or invariant violation fails the suite; countermeasure aligned with upstream #499).
+- **146 tests** covering the error catalog, state machines, deadline-guard matrix, and a **50-task gold-replay CI** (any exception or invariant violation fails the suite; countermeasure aligned with upstream #499).
 
 ## Leaderboard — 5 LLMs × 50 tasks × 4 trials (= 200 simulations per model)
 
@@ -39,7 +39,7 @@ Full protocol, judge calibration (132-sample human study), and failure typology:
 
 ```bash
 uv sync
-pytest tests/test_domains/test_campus          # 141 tests
+pytest tests/test_domains/test_campus          # 146 tests
 uv run tau2 run --domain campus --agent llm_agent \
   --agent-llm <provider>/<model> \
   --user user_simulator --user-llm deepseek/deepseek-flash \
@@ -57,7 +57,7 @@ Dataset (tasks / policy / seed DBs): [huggingface.co/datasets/ZitrackHF/tau2-zh-
 | `dev/campus` | the exact branch the upstream PR #596 is filed from |
 | `src/tau2/domains/campus/` | domain code: `data_model / user_data_model / tools / user_tools / environment` |
 | `data/tau2/domains/campus/` | `policy.md` + `db.json` + `user_db.json` + `tasks.json` (50) + `split_tasks.json` |
-| `tests/test_domains/test_campus/` | 141 tests |
+| `tests/test_domains/test_campus/` | 146 tests |
 
 ## License & credits
 
@@ -85,7 +85,7 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 - **双控环境**：模拟*学生*本人在自己的"教务 App"上执行操作（上传材料 / 确认签署），Agent 只能**引导**——正对应 τ² 论文"引导用户比自己动手更难"的核心发现；
 - **50 道分层任务**（15 易 / 20 中 / 15 难，含 17 道零写拒绝题）+ 14 表种子数据库 + 15 个 Agent 工具与 4 个学生工具，全中文错误信息；
 - **程序化判分**：Agent/学生双侧数据库终态双哈希 + 实体串逐字命中，奖励路径无 LLM 裁判；
-- **141 项测试**：覆盖错误文案目录、状态机、deadline 守卫矩阵，以及 **50 题全量金标重放 CI**（任何异常或不变量破坏即失败；对齐上游 #499 的反制措施）。
+- **146 项测试**：覆盖错误文案目录、状态机、deadline 守卫矩阵，以及 **50 题全量金标重放 CI**（任何异常或不变量破坏即失败；对齐上游 #499 的反制措施）。
 
 ## 榜单 — 5 个大模型 × 50 题 × 4 次（每模型 200 场模拟）
 
@@ -108,7 +108,7 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 
 ```bash
 uv sync
-pytest tests/test_domains/test_campus          # 141 项测试
+pytest tests/test_domains/test_campus          # 146 项测试
 uv run tau2 run --domain campus --agent llm_agent \
   --agent-llm <provider>/<model> \
   --user user_simulator --user-llm deepseek/deepseek-flash \
@@ -126,7 +126,7 @@ uv run tau2 run --domain campus --agent llm_agent \
 | `dev/campus` | 上游 PR #596 的确切来源分支 |
 | `src/tau2/domains/campus/` | 域代码：`data_model / user_data_model / tools / user_tools / environment` |
 | `data/tau2/domains/campus/` | `policy.md` + `db.json` + `user_db.json` + `tasks.json`（50）+ `split_tasks.json` |
-| `tests/test_domains/test_campus/` | 141 项测试 |
+| `tests/test_domains/test_campus/` | 146 项测试 |
 
 ## 许可与致谢
 
