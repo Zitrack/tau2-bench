@@ -318,8 +318,18 @@ class CampusUserTools(ToolKitBase):
                 row.reject_reason = "材料无效（第12/28条）。"
         elif ref_type == "certificates":
             if row.delivery == "委托代领" and row.proxy_info is not None and status == UploadStatus.UPLOADED:
-                if row.status in (CertStatus.PENDING_SIGN.value, CertStatus.MAKING.value):
-                    message += "；受托人证件影像已收到（第33条：授权签署后可领取环节核验）。"
+                # 第33条闭环（R16-A）：有效证件影像落库绑定；签署+证件齐备（任一顺序）方进入制作
+                row.proxy_info.proxy_doc_upload_id = up_id
+                if row.status == CertStatus.PENDING_SIGN.value:
+                    auth_sig = self.db.pending_signatures.get(row.proxy_info.auth_sig_id)
+                    if auth_sig is not None and auth_sig.status == SigStatus.CONFIRMED.value:
+                        row.status = CertStatus.MAKING
+                        row.proxy_info.valid_until = fmt_time(self.now + timedelta(days=30))
+                        message += "；受托人证件影像已收到并绑定，代领授权齐备，证明进入制作（第33条）。"
+                    else:
+                        message += "；受托人证件影像已收到并绑定，待本人完成代领授权签署（第33条）。"
+                else:
+                    message += "；受托人证件影像已收到（证明已在制作中）。"
         return UploadResult(server_time=self.now_str, upload_id=up_id, status=status, message=message)
 
     @is_tool(ToolType.WRITE)
@@ -404,10 +414,14 @@ class CampusUserTools(ToolKitBase):
         elif doc == SigDocType.PROXY_AUTH:
             ce = self.main_db.certificates.get(sig.ref_id)
             if ce is not None and ce.status == CertStatus.PENDING_SIGN.value:
-                ce.status = CertStatus.MAKING
-                if ce.proxy_info is not None:
+                if ce.proxy_info is not None and ce.proxy_info.proxy_doc_upload_id:
+                    ce.status = CertStatus.MAKING
                     ce.proxy_info.valid_until = fmt_time(self.now + timedelta(days=30))
-                message += f"代领授权生效：证明 {ce.cert_id} 进入制作（第33条：授权码30日内有效）。"
+                    message += f"代领授权生效：证明 {ce.cert_id} 进入制作（第33条：授权码30日内有效）。"
+                else:
+                    # 第33条闭环（R16-A）：签署完成但受托人证件未上传/无效——不进入制作；
+                    # 后续有效证件经 upload_material 按已签署 auth_sig_id 推进闭环
+                    message += f"代领授权书已签署；受托人证件影像尚未上传（或无效），证明 {ce.cert_id} 暂不进入制作（第33条）。"
                 business_status = ce.status
             self._complete_todo(TodoType.CERT_PROXY_AUTH.value, sig.ref_id)
         elif doc in (SigDocType.ENROLL_CONFIRM, SigDocType.DROP_CONFIRM, SigDocType.APPEAL_BRIEF,

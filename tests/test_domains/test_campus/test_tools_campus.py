@@ -335,9 +335,10 @@ class TestAwardAndCertificate:
                                   proxy_name="李受托", proxy_id_masked="****5678")
         assert r.status == "待签署"
         u.bind_student("S20230103")
-        u.upload_material("certificates", r.cert_id, "身份证件影像", "id.jpg")
+        up = u.upload_material("certificates", r.cert_id, "身份证件影像", "id.jpg")
         u.confirm_action(r.sig_id)
         ce = t.db.certificates[r.cert_id]
+        assert ce.proxy_info.proxy_doc_upload_id == up.upload_id  # R16-A：证件绑定落库
         assert ce.status == "制作中"
         assert ce.proxy_info.valid_until == "2026-07-12 10:00"
         t.advance_time(hours=96)  # 6-16 10:00，未过 ready_at(6-17 10:00)
@@ -553,7 +554,7 @@ class TestM1ConsistencyGuards:
         set_now(env, "2026-01-26 10:00")
         r = env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103",
                                     target_grade_id="GR-0033")
-        assert env.tools.db.tickets[r.ticket_id].target_grade_id == "GR-0033"
+        assert r.ticket_id in env.tools.db.tickets  # R16-A：target 仅判窗不落库
 
     def test_appeal_target_grade_expired_rejected(self, env):
         # 种子时点 2026-06-12：GR-0033（2026-01-23 公布）早已越 5 工作日窗
@@ -578,12 +579,52 @@ class TestM1ConsistencyGuards:
                                     target_grade_id=other)
 
     def test_appeal_without_target_unchanged(self, env):
-        """不传 target_grade_id：判窗行为与修前完全一致（种子时点拒、窗内过、行不带 target）。"""
+        """不传 target_grade_id：判窗行为与修前完全一致（种子时点拒、窗内过）。"""
         with pytest.raises(ValueError, match="成绩公布已超5个工作日"):
             env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103")
         set_now(env, "2026-01-26 10:00")
         r = env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103")
-        assert env.tools.db.tickets[r.ticket_id].target_grade_id is None
+        assert r.ticket_id in env.tools.db.tickets
+
+    def test_appeal_target_args_do_not_change_ticket_row(self, env):
+        """R16-A：target_grade_id 仅判窗、不落库——传/不传的工单行完全一致，
+        agent 显式传参不会使 DB 终态与金标缺省路径哈希分叉。"""
+        set_now(env, "2026-01-26 10:00")
+        r1 = env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103",
+                                     target_grade_id="GR-0033")
+        d1 = env.tools.db.tickets[r1.ticket_id].model_dump()
+        d1.pop("ticket_id")
+        r2 = env.tools.create_ticket("S20230103", "申诉", "成绩", "复核", "学号S20230103")
+        d2 = env.tools.db.tickets[r2.ticket_id].model_dump()
+        d2.pop("ticket_id")
+        assert d1 == d2
+
+    def test_proxy_pickup_confirm_without_document_holds(self, env):
+        """R16-A（第33条闭环）：先签署、后传有效证件——签署时无证件不进制作，上传侧闭环推进。"""
+        t, u = env.tools, env.user_tools
+        r = t.request_certificate("S20230103", "在读证明", delivery="委托代领",
+                                  proxy_name="李受托", proxy_id_masked="****1234")
+        u.bind_student("S20230103")
+        res = u.confirm_action(r.sig_id)
+        ce = t.db.certificates[r.cert_id]
+        assert ce.status == "待签署"
+        assert "尚未上传" in res.message
+        up = u.upload_material("certificates", r.cert_id, "身份证件影像", "id.jpg")
+        assert ce.status == "制作中"
+        assert ce.proxy_info.proxy_doc_upload_id == up.upload_id
+
+    def test_proxy_pickup_returned_document_not_bound(self, env):
+        """R16-A：无效/退回材料不绑定证件位，签署确认保持拦截（第33条）。"""
+        t, u = env.tools, env.user_tools
+        r = t.request_certificate("S20230103", "在读证明", delivery="委托代领",
+                                  proxy_name="李受托", proxy_id_masked="****1234")
+        u.bind_student("S20230103")
+        u.upload_material("certificates", r.cert_id, "诊断证明", "a.pdf")  # 医疗材料无等级 → 已退回
+        ce = t.db.certificates[r.cert_id]
+        assert ce.proxy_info.proxy_doc_upload_id is None
+        res = u.confirm_action(r.sig_id)
+        assert ce.status == "待签署"
+        assert "尚未上传" in res.message
 
     def test_deferral_requires_own_enrollment(self, env):
         # S20250401 在读但未选 OF-2026SP-203-1 → 缓考绑定守卫拒绝（第12/10条）

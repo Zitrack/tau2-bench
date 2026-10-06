@@ -337,6 +337,8 @@ class ProxyInfo(BaseModelNoExtra):
     id_masked: str = Field(description="受托人证件掩码")
     auth_sig_id: str = Field(description="指向 SIG- 代领授权书")
     valid_until: str = Field(description="授权码有效期＝签署日起 30 日（第33条）")
+    proxy_doc_upload_id: Optional[str] = Field(
+        None, description="受托人证件影像 UP-（第33条：签署+有效证件齐备方可进入制作；R16-A）")
 
 
 # ---------------------------------------------------------------- 行模型（db-schema §3.1–3.11）
@@ -515,8 +517,6 @@ class TicketRow(BaseModelNoExtra):
     handler: Optional[str] = None
     resolution: Optional[str] = None
     parent_ticket_id: Optional[str] = Field(None, description="level=教务处 必填（第34条逐级）")
-    target_grade_id: Optional[str] = Field(
-        None, description="M1-A2（第16条 P1-3）：申诉+成绩指定的目标成绩行 GR-，判 5 工作日窗用；None＝未指定（维持原 any() 判窗）")
 
 
 class TodoRow(BaseModelNoExtra):

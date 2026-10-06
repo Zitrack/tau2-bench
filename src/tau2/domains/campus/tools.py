@@ -1547,6 +1547,7 @@ class CampusTools(ToolKitBase):
             content: 工单内容（实名+学号+事由，第35条）。
             parent_ticket_id: 复核申诉时必填的原学院工单号 TK-xxx。
             target_grade_id: 可选，申诉目标成绩行 GR-xxx；指定后仅按该成绩判窗，空＝原行为不变。
+                仅作判窗输入、不写入工单行（R16-A：避免 agent 显式传参使 DB 终态与金标缺省路径哈希分叉）。
         """
         self._check_maintenance()
         self._student(student_id)
@@ -1591,7 +1592,6 @@ class CampusTools(ToolKitBase):
             created_at=self._server_time(),
             promised_reply_at=fmt_time(day_end(add_workdays(self.now, reply_days[category]))),
             parent_ticket_id=parent_ticket_id or None,
-            target_grade_id=target_grade_id or None,
         )
         return TicketResult(
             server_time=self._server_time(), ticket_id=tk_id, status=status, level=level,
