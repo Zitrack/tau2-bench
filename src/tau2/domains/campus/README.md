@@ -57,7 +57,7 @@ Scoring-contract note: all 50 tasks ship `reward_basis=[DB, COMMUNICATE]` (the u
 > Pin a revision: the default branch (`tau2-zh`) is a showcase snapshot, not the benchmark code.
 
 ```sh
-git clone --branch campus-v1.1.3 https://github.com/Zitrack/tau2-bench
+git clone --branch campus-v1.1.4 https://github.com/Zitrack/tau2-bench
 cd tau2-bench
 
 # install (Python >=3.12,<3.14)
@@ -164,7 +164,7 @@ Pass^1＝通过 trial 占比（共 200）；pass^4＝4/4 全过的题数（共 5
 > 请基于钉定修订跑基准：默认分支（tau2-zh）为展示快照，非基准代码。
 
 ```sh
-git clone --branch campus-v1.1.3 https://github.com/Zitrack/tau2-bench
+git clone --branch campus-v1.1.4 https://github.com/Zitrack/tau2-bench
 cd tau2-bench
 
 # 安装（Python >=3.12,<3.14）
