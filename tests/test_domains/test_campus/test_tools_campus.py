@@ -241,6 +241,20 @@ class TestDeferralChain:
         assert df.status == "驳回"
         assert "无效材料" in df.reject_reason
 
+    def test_confirm_with_only_returned_uploads_reports_pending(self, env):
+        """M6-F2（第三轮审查）：仅存在已退回（未申报等级）材料时，签署确认回执
+        如实报"待材料"而非"已提交待审"——响应与结算终态一致。"""
+        t, u = env.tools, env.user_tools
+        r = t.submit_deferral("S20230103", "OF-2026SP-203-1", "EX-0049", "因病", "考后补办")
+        u.bind_student("S20230103")
+        u.upload_material("deferral_requests", r.request_id, "病假条", "病假条.pdf")  # 未申报等级
+        assert t.db.deferral_requests[r.request_id].status == "待签署"  # D-M6-1：退回不推进
+        conf = u.confirm_action(r.sig_id)
+        assert conf.business_status == "待材料"
+        assert "待材料" in conf.message and "已提交待审" not in conf.message
+        env.sync_tools()
+        assert t.db.deferral_requests[r.request_id].status == "待材料"
+
     def test_upload_before_sign_completes_upload_todo(self, env):
         """D-S3A-3：签署前上传有效材料，材料上传待办即完成，业务行仍待签署。
         M1-A3 适配：场景从 504/EX-0050（该生无选课行，绑定守卫后非法）改为本人已选的 203/EX-0049，断言不变。

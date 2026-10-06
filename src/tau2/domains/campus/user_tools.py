@@ -356,7 +356,15 @@ class CampusUserTools(ToolKitBase):
         if doc == SigDocType.DEFERRAL_APP:
             df = self.main_db.deferral_requests.get(sig.ref_id)
             if df is not None and df.status == DeferralStatus.PENDING_SIGN.value:
-                if df.reason_type == DeferralReasonType.ILLNESS.value and not df.proof_upload_ids:
+                # M6-F2（第三轮审查）："进入待材料"按可用材料判定——仅存在已退回
+                # （未申报等级）材料时同样进入待材料，确认回执不再误报"已提交待审"
+                # （结算侧本会纠正为待材料，此处使响应与结算一致）。
+                usable = df.reason_type != DeferralReasonType.ILLNESS.value or any(
+                    (up := self.db.uploads.get(u)) is not None
+                    and up.status in (UploadStatus.UPLOADED.value, UploadStatus.VERIFIED.value)
+                    for u in df.proof_upload_ids
+                )
+                if not usable:
                     df.status = DeferralStatus.PENDING_MATERIAL
                     message += f"缓考申请 {df.request_id} 进入待材料（第12条：因病须上传三甲/校医院指定门诊诊断证明）。"
                 else:
