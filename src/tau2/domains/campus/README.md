@@ -11,7 +11,7 @@
 - **Policy**: `data/tau2/domains/campus/policy.md` — a 36-article service regulation for the fictional university, deliberately packed with time-boundary traps (the add-drop window, deferral deadlines, the maintenance window, month-end settlement, tiered appeals…).
 - **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **29 zero-write tasks (of which 20 carry explicit refusal semantics)** (privacy, skipping appeal levels, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
 - **Data**: `db.json` (11 business tables + `env`) + `user_db.json` (3 tables), 14 tables in total (students act through their own app).
-- **Tests**: `tests/test_domains/test_campus/` — 167 pytest cases (tools, replay, contract, full 50-task gold-replay CI, task self-consistency lint, upstream-contract pins, deadline-guard matrix, state-machine invariants).
+- **Tests**: `tests/test_domains/test_campus/` — 173 pytest cases (tools, replay, contract, full 50-task gold-replay CI, task self-consistency lint, upstream-contract pins, deadline-guard matrix, state-machine invariants).
 
 ## 2. Dual-control design
 
@@ -100,7 +100,7 @@ Task M16 alone absorbs all four `too_many_errors` terminations (GLM-5.3 t0/t3, Q
 Tiers are static id-prefix labels, not empirically calibrated; the anchor and Qwen rows are non-monotonic (hard > medium), so the tiers carry no statistical discriminability within this sample.
 
 **Run-code provenance.**
- The anchor row and the anchor's second-round batch record `info.git_commit` = `d9960762`; the other four rows record `7d6cae5e`; the release tag `campus-v2.1.0` = `72f430a` postdates all runs. Changes between the run code and the release tag touched only task-statement text, guard tests and file encodings — scoring semantics are unchanged, evidenced by the reference-action replay passing 50/50 with per-task dual hashes identical to the pre-cleanup baseline.
+ The anchor row and the anchor's second-round batch record `info.git_commit` = `d9960762`; the other four rows record `7d6cae5e`; the release tag `campus-v2.1.0` = `72f430a` postdates all runs (as does the current release tag). Changes between the run code and the release tag touched only task-statement text, guard tests and file encodings — scoring semantics are unchanged, evidenced by the reference-action replay passing 50/50 with per-task dual hashes identical to the pre-cleanup baseline.
 
 **Cost caliber note.**
  GOAT credits **include prompt-cache effects**; credits-per-million-tokens density varies with upstream cache hit rates and is **not directly comparable across rows**: GLM-5.3 bills at fresh rates (**1.63 cr/M**) while MiMo shows a measured **98.9%** cache hit rate (**0.122 cr/M**) — the 13× density gap is itself evidence of differing cache behavior on equivalent workload. The DeepSeek side (user+judge) uses converted prices; the anchor row's 8.71 is a 200-sim subset reference value. Any cross-row cost comparison must quote this caliber note alongside the numbers.
@@ -140,14 +140,14 @@ As-run policy disclosure: the policy text embedded in each run (per-sim) is the 
 > Pin a revision: the default branch (`tau2-zh`) is a showcase snapshot, not the benchmark code.
 
 ```sh
-git clone --branch campus-v2.1.0 https://github.com/Zitrack/tau2-bench
+git clone --branch campus-v2.2.0 https://github.com/Zitrack/tau2-bench
 # latest pinned release: https://github.com/Zitrack/tau2-bench/releases/latest
 cd tau2-bench
 
 # install (Python >=3.12,<3.14)
 uv sync
 
-# domain tests (167 cases)
+# domain tests (173 cases)
 uv run pytest tests/test_domains/test_campus
 
 # validate data
@@ -161,7 +161,7 @@ uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek
 uv run tau2 evaluate-trajs <results.json> --fresh-tasks
 ```
 
-Leaderboard rows were produced with a dual-channel harness (agent on an OpenAI-compatible endpoint, user simulator + justification model pinned to `deepseek-flash`) writing `results.json` + `meta.json` per model; full protocol notes, cost disclosures, and the row-addition guide are published with the [campus-v2.0.0 release assets](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.0.0) (`leaderboard-page.md`).
+Leaderboard rows were produced with a dual-channel harness (agent on an OpenAI-compatible endpoint, user simulator + justification model pinned to `deepseek-flash`) writing `results.json` + `meta.json` per model; full protocol notes, cost disclosures, and the row-addition guide are published with the [campus-v2.2.0 release assets](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.2.0) (`leaderboard-page.md`).
 
 ## 6. Citation
 
@@ -189,6 +189,8 @@ Questions, bug reports, and contributions: **via GitHub Issues** on this fork ([
 ## 8. Changelog
 
 > This table is the **single source of version narrative** for the project: release notes, the dataset card, the project homepage, and pull-request updates reference it rather than restating version history; where channels disagree, this table governs.
+
+- **v2.2.0 (2026-10-08) — task-statement self-containment, disclosure set, data hygiene.** Task statements: **68 string leaves** rewritten to self-contained wording — the 15 tasks that cited an unpublished internal tool-specification document now carry inline operational guidance (tool-chain timing, preconditions and parameter semantics preserved), authoring terms were removed from a persona and a purpose, evaluation-jargon vocabulary was naturalized, and one purpose's quoted rejection note was rephrased as indirect speech (it paraphrases the runtime rejection wording rather than quoting it). Scoring contract fields are byte-identical to v2.1.0: `communicate_info`, `env_assertions`, `initial_state`, per-task `user_tools`, and the core fields of every gold action (`action_id`/`requestor`/`name`/`arguments`); per-task double-hash replay unchanged. Disclosure set (§3/§4 above): the three policy-text eras (per-sim as-run 5,663 chars / run-level v1.4.1 5,515 / published v1.4.2 5,541), task-era detail (the anchor row carries first-generation assertion strings), limitations (24/50 zero-signal tasks, assertion discriminability, rule-reproducibility vs human-agreement distinction, agent-side authorization asymmetry), trial-level terminations with the M16 root-cause note (two friction points recorded for a future iteration; the tool contract is unchanged), the difficulty-tier table with its non-monotonic rows, run-code provenance, and cost caliber. Data hygiene: student profile fields rectified (gender aligned to name semantics; 40 unique masked phone/ID values with disjoint tails — display fields only, no grading surface reads them); `manifest.json` binds code to data (per-file sha256 + version twins). Evidence & governance: asset manifest with platform upload record and a freeze policy (old-tag assets immutable from this release), harness endpoint/UA metadata scrubbed from the run files (model reasoning traces retained with a redistribution note), the second-round calibration batch published, a task-statement cleanup record (marker-occurrence accounting), and a public data validator (`validate-published-tasks.py`, PASS 2063). pytest **167→173**. **Leaderboard numbers remain the v2.0.0-era as-run results** (no re-runs); the per-task statement deltas are itemized in the release cleanup record.
 
 - **v2.1.0 (2026-10-07) — task-statement cleanup, guard expansion (policy v1.4.2).** Every string leaf of the published task set was swept for authoring markers: **101 sites** cleaned — leading test-point fragments (50), internal decision/version tags (`D-S…`/`v1.x`) across purposes, relevant-policy notes, and gold-action info strings (ticket-spec references genericized), plus two author-version annotations inside user-scenario scripts (cleaned under an explicit two-site exception to the "instructions byte-identical" rule). M06's task statement was rewritten to match its actual zero-write refusal semantics and E12's stale expectation dropped. Scoring contract fields are byte-identical to v2.0.0: `communicate_info`, `env_assertions`, `initial_state`, per-task `user_tools`, and the core fields of every gold action (`action_id`/`requestor`/`name`/`arguments`). Four gold-action **info** text sites were cleaned (M05 ×1, H01 ×2, H15 ×1) — free-text annotations only, never read by the evaluator. Per-task double-hash replay is identical to v2.0.0. Policy **v1.4.2** adds a single version footer line (article text unchanged). New guards: full-leaf marker scan, task self-consistency lint (tool-surface reachability, refusal semantics for zero-action tasks, user-side gold actions), three upstream-contract pins; `solo_mode` now raises per upstream convention; `io_utils` gains UTF-8 on write paths and trajectory readers. pytest **157→167**. **Leaderboard numbers remain the v2.0.0-era as-run results** (no re-runs); the release notes disclose the task-statement deltas.
 - **v2.0.0 (2026-10-06) — data-contract release.** Internal QA metadata fully removed from the public dataset: `description.notes` dropped across all 50 tasks, `issues` keys removed, and P0x hint fragments scrubbed from the agent-visible `purpose` / `relevant_policies` fields — embedded task copies inside the published raw runs normalized to the same data-contract (QA metadata stripped: notes/issues/P0x; assertion strings and trajectory bodies preserved). `policy.md` meta-annotations (13 grading-marker tags, internal version labels, header changelog) removed with article text unchanged → policy **v1.4.1**; the as-run policy text inside historical trajectories is preserved verbatim. Calibers redefined & recomputed: **54** env_assertions (25 tasks), **29 zero-write tasks (20 with explicit refusal semantics)**, pytest **147→157** (81 test functions, incl. the 50-task gold-replay parametrization). Release engineering: fork-side CI, UTF-8 fix in `io_utils` (Windows GBK), root-README banner, runtime benchmark metadata, raw runs & judge calibration published as release assets. Gold-replay CI 50/50 maintained at every step.
@@ -318,7 +320,7 @@ M16 一题吸收全部 4 次 `too_many_errors`（GLM-5.3 t0/t3、Qwen3.8-Flash t
 难度标签＝题集 id 前缀静态标注，未经难度实证标定；锚点与 Qwen 两行 hard>medium 非单调，分层在样本内不具统计区分力。
 
 **运行代码版本。**
-锚点行与锚点第二轮批次 `info.git_commit` = `d9960762`；其余四行 = `7d6cae5e`；发布 tag `campus-v2.1.0` = `72f430a`（跑批之后）。run-code 与发布 tag 之间的变更仅涉及任务陈述文本、守卫测试与文件编码，判分语义零变化——以参考动作回放 50/50 逐题双哈希（重放终态哈希与清洗前逐题相等）为证。
+锚点行与锚点第二轮批次 `info.git_commit` = `d9960762`；其余四行 = `7d6cae5e`；发布 tag `campus-v2.1.0` = `72f430a`（跑批之后；现行发布 tag 同样晚于全部跑批）。run-code 与发布 tag 之间的变更仅涉及任务陈述文本、守卫测试与文件编码，判分语义零变化——以参考动作回放 50/50 逐题双哈希（重放终态哈希与清洗前逐题相等）为证。
 
 **成本口径注。**
 GOAT credits **含 prompt 缓存效应**，密度（cr/M tok）随上游缓存命中率波动，**跨行不可直接比较**：GLM-5.3 无缓存收益按 fresh 计费 **1.63 cr/M**，MiMo 实测缓存命中 **98.9%** 密度仅 **0.122 cr/M**——同一量级 workload 下 13× 密度差本身即缓存行为差异的证据；DeepSeek 侧（user+judge）为折算价，锚点行 8.71 为 200-sim 子集参考值。引用于任何对比时须连同本口径注一并引用。
@@ -358,14 +360,14 @@ as-run 政策披露：各次运行内嵌的政策文本（per-sim）为 v1.4 前
 > 请基于钉定修订跑基准：默认分支（tau2-zh）为展示快照，非基准代码。
 
 ```sh
-git clone --branch campus-v2.1.0 https://github.com/Zitrack/tau2-bench
+git clone --branch campus-v2.2.0 https://github.com/Zitrack/tau2-bench
 # latest pinned release: https://github.com/Zitrack/tau2-bench/releases/latest
 cd tau2-bench
 
 # 安装（Python >=3.12,<3.14）
 uv sync
 
-# 域测试（167 项）
+# 域测试（173 项）
 uv run pytest tests/test_domains/test_campus
 
 # 数据校验
@@ -379,7 +381,7 @@ uv run tau2 run --domain campus --agent-llm <model> --user-llm deepseek/deepseek
 uv run tau2 evaluate-trajs <results.json> --fresh-tasks
 ```
 
-榜单各行由双通道 harness 产出（agent 走 OpenAI 兼容端点，user simulator＋判定模型钉在 `deepseek-flash`），逐模型落盘 `results.json`＋`meta.json`；完整协议说明、成本披露与加行指南见 [campus-v2.0.0 Release assets](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.0.0) 中的 `leaderboard-page.md`。
+榜单各行由双通道 harness 产出（agent 走 OpenAI 兼容端点，user simulator＋判定模型钉在 `deepseek-flash`），逐模型落盘 `results.json`＋`meta.json`；完整协议说明、成本披露与加行指南见 [campus-v2.2.0 Release assets](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.2.0) 中的 `leaderboard-page.md`。
 
 ## 6. 引用格式
 
@@ -407,6 +409,8 @@ uv run tau2 evaluate-trajs <results.json> --fresh-tasks
 ## 8. 变更记录
 
 > 本变更记录是项目的**版本叙事唯一来源**：Release notes、数据集卡、项目首页与 PR 更新均引用本表而非各自重述版本史；各渠道表述不一致时以本表为准。
+
+- **v2.2.0（2026-10-08）——任务陈述自足化、披露集与数据整饰。** 任务陈述：**68 个字符串叶**改写为自足表述——原引用未公开内部《工具规格》文档的 15 题改为内联操作指引（工具链时序、预检条件、参数语义保持），persona 与 purpose 中的作者用语移除、评测语域词汇自然化，另有一处 purpose 的引号化提示语改为转述（转述运行时拒绝文案而非引用）。判分契约字段与 v2.1.0 逐字节一致：communicate_info、env_assertions、initial_state、逐题 user_tools 与金标动作全部核心字段（action_id / requestor / name / arguments）；逐题双哈希重放不变。披露集（见上文 §3/§4）：三时代政策文本（per-sim as-run 5,663 字符 / run 级 v1.4.1 5,515 / 发布 v1.4.2 5,541）、任务时代明细（锚点行持第一代断言串）、局限（24/50 零信号题、断言判别力、规则可复现率与人工一致率的区分、agent 侧授权不对称）、trial 级终止披露与 M16 成因注记（两处摩擦点留待后续版本，工具契约未动）、难度分层表（含非单调行）、run-code 溯源与成本口径。数据整饰：学生档案字段校正（性别对齐姓名语义；40 组唯一脱敏电话/证件号、尾号互斥——均为展示字段，判分面不读取）；`manifest.json` 绑定代码与数据（逐件 sha256＋版本孪生）。证据与治理：资产清单（含平台上传记录与冻结纪律——自本版起旧 tag 资产不可变）、运行文件中 harness 端点/UA 元数据洗刷（模型思维链保留并附再分发说明）、校准第二轮批次发布、任务陈述清洗记录（标记出现次数口径）、公开数据校验器（`validate-published-tasks.py`，PASS 2063）。pytest **167→173**。**榜单数字仍为 v2.0.0 时代任务的 as-run 结果**（未重跑）；逐题陈述差异在发布清洗记录中逐条列出。
 
 - **v2.1.0（2026-10-07）——任务陈述清洗与守卫扩展（政策 v1.4.2）**：公开任务集全部字符串叶清扫作者标记：**101 处**——前导"考点"残迹（50 处）、purpose/相关条款/金标动作 info 中的内部决策与版本标注（`D-S…`/`v1.x`）删除、工具规格引用改中性通称，以及两处 user-scenario 剧本中的作者版本标注（经明示两站点例外——"instructions 逐字节不变"条款恰对此两点修订）。M06 任务陈述重写为零写拒绝语义、E12 陈旧期望句删除。判分契约字段与 v2.0.0 逐字节一致：communicate_info、env_assertions、initial_state、逐题 user_tools，以及金标动作全部核心字段（action_id / requestor / name / arguments）；金标动作的 info 自由文本清理了 4 处（M05×1、H01×2、H15×1），evaluator 不读该文本。逐题双哈希重放与 v2.0.0 完全一致。政策 **v1.4.2** 增加单行版本脚注（条款正文不变）。新增守卫：全叶标记扫描、任务自洽 lint（工具面可达性、零动作题拒绝语义、user 侧金标动作）、三项上游契约钉；`solo_mode` 按上游规范改为抛错；`io_utils` 写侧与轨迹读取补 UTF-8。pytest **157→167**。**榜单数字仍为 v2.0.0 时代任务的 as-run 结果**（未重跑）；任务陈述差异在 Release notes 中披露。
 - **v2.0.0（2026-10-06）——数据契约版本**：公开数据集内部 QA 元数据全量移除——50 题 `description.notes` 剥离、`issues` 键删除、agent 可见 `purpose`/`relevant_policies` 中 P0x 提示片段清除（已发布原始跑批中的内嵌任务副本归一到同一数据契约——QA 元数据剥离：notes/issues/P0x；断言串与轨迹本体保留）；`policy.md` 元注记清除（13 个判分标记＋内部版本标签＋头部变更日志）——条款正文零触碰，政策版本 **v1.4.1**；历史轨迹中的 as-run 政策文本按原样保留。口径重定义并重算：**54** 条 env_assertions（25 题）、**29 道零写任务（其中 20 道具明确拒绝语义）**、pytest **147→157**（81 个测试函数，含 50 题金标重放参数化）。发布工程：fork-side CI、`io_utils` UTF-8 修复（Windows GBK）、根 README 横幅、运行时基准元数据、原始跑批与判分校准作为 Release assets 公开。全程金标重放 CI 50/50。
