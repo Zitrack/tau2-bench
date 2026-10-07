@@ -10,7 +10,7 @@
 - **Policy**: `data/tau2/domains/campus/policy.md` — a 36-article service regulation for the fictional university, deliberately packed with time-boundary traps (the add-drop window, deferral deadlines, the maintenance window, month-end settlement, tiered appeals…).
 - **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **29 zero-write tasks (of which 20 carry explicit refusal semantics)** (privacy, skipping appeal levels, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
 - **Data**: `db.json` (11 business tables + `env`) + `user_db.json` (3 tables), 14 tables in total (students act through their own app).
-- **Tests**: `tests/test_domains/test_campus/` — 157 pytest cases (tools, replay, contract, full 50-task gold-replay CI, deadline-guard matrix, state-machine invariants).
+- **Tests**: `tests/test_domains/test_campus/` — 167 pytest cases (tools, replay, contract, full 50-task gold-replay CI, task self-consistency lint, upstream-contract pins, deadline-guard matrix, state-machine invariants).
 
 ## 2. Dual-control design
 
@@ -65,14 +65,14 @@ As-run policy disclosure: the policy text embedded in each run (per-sim) is the 
 > Pin a revision: the default branch (`tau2-zh`) is a showcase snapshot, not the benchmark code.
 
 ```sh
-git clone --branch campus-v2.0.0 https://github.com/Zitrack/tau2-bench
+git clone --branch campus-v2.1.0 https://github.com/Zitrack/tau2-bench
 # latest pinned release: https://github.com/Zitrack/tau2-bench/releases/latest
 cd tau2-bench
 
 # install (Python >=3.12,<3.14)
 uv sync
 
-# domain tests (157 cases)
+# domain tests (167 cases)
 uv run pytest tests/test_domains/test_campus
 
 # validate data
@@ -110,6 +110,7 @@ Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.0798
 
 ## 8. Changelog
 
+- **v2.1.0 (2026-10-07) — task-statement cleanup, guard expansion (policy v1.4.2).** Every string leaf of the published task set was swept for authoring markers: **101 sites** cleaned — leading test-point fragments (50), internal decision/version tags (`D-S…`/`v1.x`) across purposes, relevant-policy notes, and gold-action info strings (ticket-spec references genericized), plus two author-version annotations inside user-scenario scripts (cleaned under an explicit two-site exception to the "instructions byte-identical" rule). M06's task statement was rewritten to match its actual zero-write refusal semantics and E12's stale expectation dropped. **The scoring contract is untouched** — `communicate_info`, gold actions, `env_assertions`, initial state, and per-task user-tool surfaces are byte-identical; per-task double-hash replay is identical to v2.0.0. Policy **v1.4.2** adds a single version footer line (article text unchanged). New guards: full-leaf marker scan, task self-consistency lint (tool-surface reachability, refusal semantics for zero-action tasks, user-side gold actions), three upstream-contract pins; `solo_mode` now raises per upstream convention; `io_utils` gains UTF-8 on write paths and trajectory readers. pytest **157→167**. **Leaderboard numbers remain the v2.0.0-era as-run results** (no re-runs); the release notes disclose the task-statement deltas.
 - **v2.0.0 (2026-10-06) — data-contract release.** Internal QA metadata fully removed from the public dataset: `description.notes` dropped across all 50 tasks, `issues` keys removed, and P0x hint fragments scrubbed from the agent-visible `purpose` / `relevant_policies` fields — the embedded task copies inside the published raw runs are normalized to the same contract (trajectory bodies preserved verbatim). `policy.md` meta-annotations (13 grading-marker tags, internal version labels, header changelog) removed with article text unchanged → policy **v1.4.1**; the as-run policy text inside historical trajectories is preserved verbatim. Calibers redefined & recomputed: **54** env_assertions (25 tasks), **29 zero-write tasks (20 with explicit refusal semantics)**, pytest **147→157** (81 test functions, incl. the 50-task gold-replay parametrization). Release engineering: fork-side CI, UTF-8 fix in `io_utils` (Windows GBK), root-README banner, runtime benchmark metadata, raw runs & judge calibration published as release assets. Gold-replay CI 50/50 maintained at every step.
 - **v1.1.5 (2026-10-06) — release discoverability & runtime version metadata.** The root `README.md` gains a fork banner (latest tag / domain README / dataset / protocol / upstream-PR links) so release tags are self-explanatory when cloned; `tau2.domains.campus` now exposes runtime-readable `__version__` (benchmark axis), `POLICY_VERSION`, and `SCORING_PROTOCOL` — the engine package version (`tau2 == 1.0.1`) stays pinned in `pyproject.toml` for leaderboard comparability. Code-only; dataset files unchanged. Tag `campus-v1.1.5`. 147 tests green.
 - **v1.1.4 (2026-10-06) — art. 33 closure details (proxy-pickup).** Validity of the proxy-pickup authorization code now anchors to the **signing time** (`auth_sig.acted_at + 30d`), not the later document-upload time, when the "sign first, upload later" path completes the loop; `get_service_requests` distinguishes the two causes of pending-signature — unsigned → 缺签署（代领授权书）, signed-but-missing-ID → 缺受托人证件影像（第 33 条）— so agents are no longer steered to re-sign. Zero gold impact (no gold task contains the affected strings or the sign-first path); gold-replay CI 50/50, 146 tests green. Fix commit lands after tag `campus-v1.1.3`; use tag `campus-v1.1.4` for the corrected pin.
@@ -183,14 +184,14 @@ as-run 政策披露：各次运行内嵌的政策文本（per-sim）为 v1.4 前
 > 请基于钉定修订跑基准：默认分支（tau2-zh）为展示快照，非基准代码。
 
 ```sh
-git clone --branch campus-v2.0.0 https://github.com/Zitrack/tau2-bench
+git clone --branch campus-v2.1.0 https://github.com/Zitrack/tau2-bench
 # latest pinned release: https://github.com/Zitrack/tau2-bench/releases/latest
 cd tau2-bench
 
 # 安装（Python >=3.12,<3.14）
 uv sync
 
-# 域测试（157 项）
+# 域测试（167 项）
 uv run pytest tests/test_domains/test_campus
 
 # 数据校验
@@ -228,6 +229,7 @@ uv run tau2 evaluate-trajs <results.json> --fresh-tasks
 
 ## 8. 变更记录
 
+- **v2.1.0（2026-10-07）——任务陈述清洗与守卫扩展（政策 v1.4.2）**：公开任务集全部字符串叶清扫作者标记：**101 处**——前导"考点"残迹（50 处）、purpose/相关条款/金标动作 info 中的内部决策与版本标注（`D-S…`/`v1.x`）删除、工具规格引用改中性通称，以及两处 user-scenario 剧本中的作者版本标注（经明示两站点例外——"instructions 逐字节不变"条款恰对此两点修订）。M06 任务陈述重写为零写拒绝语义、E12 陈旧期望句删除。**判分契约零触碰**——`communicate_info`、金标动作、`env_assertions`、initial_state、逐题工具面逐字节不变；逐题双哈希重放与 v2.0.0 完全一致。政策 **v1.4.2** 增加单行版本脚注（条款正文不变）。新增守卫：全叶标记扫描、任务自洽 lint（工具面可达性、零动作题拒绝语义、user 侧金标动作）、三项上游契约钉；`solo_mode` 按上游规范改为抛错；`io_utils` 写侧与轨迹读取补 UTF-8。pytest **157→167**。**榜单数字仍为 v2.0.0 时代任务的 as-run 结果**（未重跑）；任务陈述差异在 Release notes 中披露。
 - **v2.0.0（2026-10-06）——数据契约版本**：公开数据集内部 QA 元数据全量移除——50 题 `description.notes` 剥离、`issues` 键删除、agent 可见 `purpose`/`relevant_policies` 中 P0x 提示片段清除（已发布原始跑批中的内嵌任务副本同步对齐，轨迹本体逐字保留）；`policy.md` 元注记清除（13 个判分标记＋内部版本标签＋头部变更日志）——条款正文零触碰，政策版本 **v1.4.1**；历史轨迹中的 as-run 政策文本按原样保留。口径重定义并重算：**54** 条 env_assertions（25 题）、**29 道零写任务（其中 20 道具明确拒绝语义）**、pytest **147→157**（81 个测试函数，含 50 题金标重放参数化）。发布工程：fork-side CI、`io_utils` UTF-8 修复（Windows GBK）、根 README 横幅、运行时基准元数据、原始跑批与判分校准作为 Release assets 公开。全程金标重放 CI 50/50。
 - **v1.1.5（2026-10-06）——发布可发现性与运行时版本元数据**：根 `README.md` 顶部增加 fork 横幅（最新 tag／域 README／数据集／协议／上游 PR 链接），clone 发布 tag 后即自解释；`tau2.domains.campus` 暴露运行时可读的 `__version__`（基准轴）、`POLICY_VERSION` 与 `SCORING_PROTOCOL`——引擎包版本（`tau2 == 1.0.1`）仍钉在 `pyproject.toml` 以保证榜单可比性。仅代码变更，数据集文件零变化。tag `campus-v1.1.5`。147 项测试全绿。
 - **v1.1.4（2026-10-06）——第 33 条闭环细节（代领授权）**：先签后传路径闭环推进时，代领授权码有效期锚定为**签署时刻**（`auth_sig.acted_at + 30 日`），不再按后置上传时刻起算；`get_service_requests` 对"待签署"按成因分流——未签署 → 缺签署（代领授权书），已签署缺证件 → 缺受托人证件影像（第 33 条）——不再误导 agent 重新签署。对金标零影响（受影响字符串与先签后传路径均不在金标中）；金标重放 CI 50/50，146 项测试全绿。修复提交位于 tag `campus-v1.1.3` 之后，修正版请用 tag `campus-v1.1.4`。
