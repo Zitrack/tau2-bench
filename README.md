@@ -74,7 +74,7 @@ Dataset (tasks / policy / seed DBs): [huggingface.co/datasets/ZitrackHF/tau2-zh-
 
 ## License & credits
 
-Code and domain content released under the upstream **MIT license**. τ²-bench by Sierra Research ([upstream repo](https://github.com/sierra-research/tau2-bench), paper: [*τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment*](https://arxiv.org/abs/2506.07982)). All institutions, people, and records in the campus domain are fictional ("Qingchuan University"); policy material is rewritten and de-identified from public regulations.
+Code and domain content released under the upstream **MIT license**. τ²-bench by Sierra Research ([upstream repo](https://github.com/sierra-research/tau2-bench), paper: [*τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment*](https://arxiv.org/abs/2506.07982)). All institutions, people, and records in the campus domain are fictional ("Qingchuan University"); policy material is rewritten and de-identified from public regulations. Tau2-ZH is an **unofficial**, independent extension — **not affiliated with Sierra Research**. Questions or feedback: **via GitHub Issues** on this fork ([Zitrack/tau2-bench Issues](https://github.com/Zitrack/tau2-bench/issues)).
 
 ---
 
@@ -156,4 +156,4 @@ uv run tau2 run --domain campus --agent llm_agent \
 
 ## 许可与致谢
 
-代码与域内容遵循上游 **MIT 许可**。τ²-bench 由 Sierra Research 开发（[上游仓库](https://github.com/sierra-research/tau2-bench)，论文：[*τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment*](https://arxiv.org/abs/2506.07982)）。campus 域中的全部机构、人名与记录均为虚构（"青川大学 / Qingchuan University"）；政策素材改写自公开法规并脱敏。
+代码与域内容遵循上游 **MIT 许可**。τ²-bench 由 Sierra Research 开发（[上游仓库](https://github.com/sierra-research/tau2-bench)，论文：[*τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment*](https://arxiv.org/abs/2506.07982)）。campus 域中的全部机构、人名与记录均为虚构（"青川大学 / Qingchuan University"）；政策素材改写自公开法规并脱敏。Tau2-ZH 为**非官方**独立扩展，**与 Sierra Research 无隶属/关联关系**（unofficial / not affiliated with Sierra Research）。问题或反馈请**经 GitHub Issues** 提出（[Zitrack/tau2-bench Issues](https://github.com/Zitrack/tau2-bench/issues)）。
