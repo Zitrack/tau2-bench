@@ -21,12 +21,17 @@ identity would drift while the rest of the suite stayed green:
 
 Also: ``get_environment(solo_mode=True)`` must raise ``ValueError`` —
 the upstream convention for domains without solo support
-(airline/retail/banking_knowledge behave the same way).
+(airline/retail/banking_knowledge behave the same way); and
+``initialization_data.user_data`` may carry the non-DB key ``student_id``
+(campus convention for binding the student-side identity: the key is
+consumed by ``set_state`` and must never reach ``update_db``, because
+``UserDB`` forbids extra keys).
 """
 
 import pytest
+from pydantic import ValidationError
 
-from tau2.data_model.tasks import EnvFunctionCall
+from tau2.data_model.tasks import EnvFunctionCall, InitializationData
 from tau2.domains.campus.environment import get_environment, get_tasks
 
 
@@ -142,3 +147,43 @@ def test_get_environment_rejects_solo_mode():
     constructor must reject solo_mode instead of silently enabling it."""
     with pytest.raises(ValueError, match="Solo mode not supported for campus"):
         get_environment(solo_mode=True)
+
+
+def test_user_data_student_id_channel_binds_and_strips():
+    """Guard ④: ``initialization_data.user_data`` may carry the non-DB key
+    ``student_id`` — ``set_state`` binds the student-side identity through
+    this channel and must strip the key before ``update_db``. Three facts
+    are pinned: the channel works end-to-end (bound identity answers a
+    user-side read), the key never reaches the DB, and a pass-through would
+    be rejected by the extra=forbid DB model (so stripping is load-bearing,
+    not decorative)."""
+    env = get_environment()
+    seen: list = []
+    original_update_db = env.user_tools.update_db
+
+    def _spy(update_data=None):
+        seen.append(update_data)
+        return original_update_db(update_data)
+
+    env.user_tools.update_db = _spy
+    env.set_state(
+        initialization_data=InitializationData(
+            agent_data=None,
+            user_data={"student_id": "S20230101"},
+        ),
+        initialization_actions=[],
+        message_history=[],
+        strict=True,
+    )
+
+    # channel usable: identity bound, student-side read answers
+    assert env.user_tools.bound_student_id == "S20230101"
+    assert env.user_tools.check_student_app() is not None
+    # the non-DB key was consumed before the DB write
+    assert seen == [{}], (
+        f"student_id must be stripped before update_db, observed: {seen}"
+    )
+    assert "student_id" not in env.user_tools.db.model_dump()
+    # without the strip the DB model would reject the key (extra=forbid)
+    with pytest.raises(ValidationError):
+        original_update_db({"student_id": "S20230101"})

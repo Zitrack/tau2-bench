@@ -11,7 +11,7 @@ described a submission flow the data could not support:
    ``actions=[]`` AND ``env_assertions=[]`` (no graded action, no env
    assertion — everything it grades lives in what the agent must NOT do)
    must state refusal / zero-write semantics explicitly in ``purpose``
-   (marker set: ``拒绝|零写|无需|不受理``);
+   (marker set: ``拒绝|零写|无需|不受理|不产生任何数据写入``);
 3. **golden user-side actions**: every golden action with
    ``requestor="user"`` must name a tool inside that task's
    ``user_tools``.
@@ -29,7 +29,10 @@ from tau2.domains.campus.environment import get_environment, get_tasks
 from tau2.domains.campus.utils import CAMPUS_TASK_SET_PATH
 
 # refusal / zero-write semantics the purpose of a zero-shape task must carry.
-REFUSAL_MARKERS = ("拒绝", "零写", "无需", "不受理")
+# "不产生任何数据写入" is the plain-language phrasing the corpus uses since the
+# statement rewrite (it replaced the "零写" shorthand); the old markers stay so
+# historical wording keeps counting as refusal semantics too.
+REFUSAL_MARKERS = ("拒绝", "零写", "无需", "不受理", "不产生任何数据写入")
 
 # pre-cleanup M06 purpose: describes a submit→upload flow, ends in grading
 # shorthand, carries NONE of the REFUSAL_MARKERS → must fail check 2.
