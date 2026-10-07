@@ -28,6 +28,8 @@ The full domain documentation lives at [`src/tau2/domains/campus/README.md`](src
 | 4 | GLM-5.3-Flash | 0.790 | 0.680 | 5.12 | 2.192 |
 | 5 | MiMo-V2.6-Pro | 0.855 | 0.660 | 5.19 | 1.816 |
 
+> **Scope note for the table**: the anchor row was collected on the **first generation of assertion strings** (the other four rows after the strings were revised); all figures are **v2.0.0-era as-run results** (no re-runs). Full disclosures — task-era detail, terminations, tier breakdown, run-code provenance, cost caliber — live in the domain README §3.
+
 - **v1.1.1 patch (2026-10-05/06)**: consistency fixes (policy↔code↔gold) — tasks H01 (two-document illness deferrals) and H06 (special-channel 10-workday window, re-anchored) were corrected and all rows re-anchored via a 40-sim overlay; per-row pre-patch values are preserved. Rows 3/4 swap places at equal pass^4 (0.680) by pass^1. See the domain [Changelog](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-changelog) and PR #596 updates (parts 1–5).
 - user simulator + NL judge pinned to **DeepSeek V4.1-Flash** (`deepseek-flash`) for every row; temperature 0; seed 20261004; max_steps 60.
 - **E14 t1 was an upstream-infrastructure outage** (4 retry waves, `provider temporarily unavailable`): excluding that trial gives MiMo 0.840/0.660 pre-patch and 0.860/0.680 on the current v1.1.1 overlay — both calibers documented.
@@ -109,6 +111,8 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 | 3 | GLM-5.3 | 0.805 | 0.680 | 5.17 | 23.195 |
 | 4 | GLM-5.3-Flash | 0.790 | 0.680 | 5.12 | 2.192 |
 | 5 | MiMo-V2.6-Pro | 0.855 | 0.660 | 5.19 | 1.816 |
+
+> **榜单表口径注**：锚点行采集于**断言串第一代**（其余四行采集于换串后）；全部数字为 **v2.0.0 时代 as-run 结果**（未重跑）。完整披露——任务时代明细、终止披露、难度分层、运行代码版本、成本口径——见域 README §3。
 
 - **v1.1.1 补丁（2026-10-05/06）**：一致性修复（政策↔代码↔金标）——H01（因病缓考双材料）与 H06（特别通道十工作日窗，重锚）两题修复后，经 40 sims overlay 对全部 5 行重跑重锚；各行 pre-patch 原值保留。pass^4 同为 0.680 的第 3/4 名按 pass^1 排序互换。详见域 [变更记录](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-变更记录) 与 PR #596 Updates（part 1–5）。
 - user simulator 与 NL judge 每行钉在 **DeepSeek V4.1-Flash**（`deepseek-flash`）；temperature=0；seed=20261004；max_steps=60。

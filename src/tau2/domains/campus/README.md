@@ -44,6 +44,65 @@ Difficulty tiers are design-time labels (15 easy / 20 medium / 15 hard); observe
 
 Task-era disclosure: the anchor row was collected on the first generation of assertion strings (r1); the other four rows were collected after the assertion strings were revised. The embedded task copies inside each published run are preserved verbatim from run time apart from the v2.0.0 QA-metadata cleanup; they keep each row's as-run assertion strings and differ from the current published `tasks.json` at statement level (task-era disclosure) and are the primary evidence of each row's grading caliber.
 
+Full disclosure set (every figure recomputed programmatically from the published run assets; the Chinese half of this README carries identical content):
+
+**Task-era detail.**
+ The embedded task copies inside the published run files (as-run evidence, frozen) and the currently published task set belong to two different eras. At the statement layer, **50/50 tasks differ**. At the scoring layer (anchor row vs the current release): evaluation_criteria differs on **12 tasks** (E12, H01, H05, H08, H13, H14, H15, M05, M06, M08, M12, M19), **14 including initial_state** (+ H06, M03). **Shared by all five rows: 5 tasks** (M03/H06 = initial_state; M05/H01/H15 = four actions[].info text sites):
+
+| Task | Differs in |
+|---|---|
+| M03 | initial_state (seed/time-anchor difference) |
+| H06 | initial_state (seed/time-anchor difference) |
+| M05 | evaluation_criteria.actions[].info text |
+| H01 | evaluation_criteria.actions[].info text |
+| H15 | evaluation_criteria.actions[].info text |
+
+**Anchor-only: 9 tasks** (the other four rows' embedded scoring fields match the current release; the anchor carries the first-generation assertion strings):
+
+| Task | Differs in |
+|---|---|
+| E12 | communicate_info assertion string |
+| M06 | actions 2->0 |
+| M08 | communicate_info assertion string |
+| M12 | communicate_info assertion string |
+| M19 | communicate_info assertion string |
+| H05 | communicate_info assertion string |
+| H08 | communicate_info assertion string |
+| H13 | communicate_info assertion string |
+| H14 | communicate_info assertion string |
+
+The scoring contract itself (deterministic substring matching over COMMUNICATE assertions + DB terminal-state hash + env_assertions as diagnostics) does not change across eras.
+
+**Termination disclosure.**
+ Exactly 5 of the 1,000 leaderboard sims ended with a reason other than `user_stop`:
+
+| Row | trial | Reason |
+|---|---|---|
+| Qwen3.8-Flash | M16 t2 | `too_many_errors` |
+| Qwen3.8-Flash | M16 t3 | `too_many_errors` |
+| GLM-5.3 | M16 t0 | `too_many_errors` |
+| GLM-5.3 | M16 t3 | `too_many_errors` |
+| MiMo-V2.6-Pro | E14 t1 | `infrastructure_error` |
+
+Task M16 alone absorbs all four `too_many_errors` terminations (GLM-5.3 t0/t3, Qwen3.8-Flash t2/t3 — tool-error limit reached); MiMo E14 t1 is an `infrastructure_error` (upstream outage, retries exhausted, reward_info=None scored 0; engineering noise). The dual caliber for E14 t1 is documented in the leaderboard page's "two scoring calibers" section.
+
+**Tier breakdown.**
+| Row | easy | medium | hard | Note |
+|---|---|---|---|---|
+| DeepSeek V4.1-Flash | 1.0000 | 0.9625 | 0.9667 | hard > medium（非单调 / non-monotonic） |
+| Qwen3.8-Flash | 0.9667 | 0.8000 | 0.8333 | hard > medium（非单调 / non-monotonic） |
+| GLM-5.3 | 0.8333 | 0.8250 | 0.7500 |  |
+| GLM-5.3-Flash | 0.7833 | 0.8125 | 0.7667 |  |
+| MiMo-V2.6-Pro | 0.8833 | 0.8750 | 0.8000 |  |
+
+Tiers are static id-prefix labels, not empirically calibrated; the anchor and Qwen rows are non-monotonic (hard > medium), so the tiers carry no statistical discriminability within this sample.
+
+**Run-code provenance.**
+ The anchor row and the anchor's second-round batch record `info.git_commit` = `d9960762`; the other four rows record `7d6cae5e`; the release tag `campus-v2.1.0` = `72f430a` postdates all runs. Changes between the run code and the release tag touched only task-statement text, guard tests and file encodings — scoring semantics are unchanged, evidenced by the reference-action replay passing 50/50 with per-task dual hashes identical to the pre-cleanup baseline.
+
+**Cost caliber note.**
+ GOAT credits **include prompt-cache effects**; credits-per-million-tokens density varies with upstream cache hit rates and is **not directly comparable across rows**: GLM-5.3 bills at fresh rates (**1.63 cr/M**) while MiMo shows a measured **98.9%** cache hit rate (**0.122 cr/M**) — the 13× density gap is itself evidence of differing cache behavior on equivalent workload. The DeepSeek side (user+judge) uses converted prices; the anchor row's 8.71 is a 200-sim subset reference value. Any cross-row cost comparison must quote this caliber note alongside the numbers.
+
 ## 4. Protocol & grading declarations
 
 1. Tasks with multi-chain procedures open with the user stating their student ID (hard beat; omitting it provokes ID hallucination).
@@ -60,6 +119,19 @@ Scoring-contract note: all 50 tasks ship `reward_basis=[DB, COMMUNICATE]` (the u
 **Grading (judge) statement**: COMMUNICATE items use **deterministic substring matching** against the agent's full reply text (no whitespace/full-width normalization); DB items use terminal-state hash comparison; both must pass. The `deepseek-flash` model only writes justification text — the met/not-met decision is fully reproducible by rule (530/530 in calibration). Paraphrases may therefore score as misses; ~60% of misses in the audited population are such string-level engineering noise rather than capability failures. The two headline validation figures must not be conflated: **530/530 = rule-reproducibility** (the deterministic matcher reproduces every calibration decision), while **78.0% = human agreement on a constructively sampled calibration set** — two different things.
 
 As-run policy disclosure: the policy text embedded in each run (per-sim) is the pre-v1.4 original; it has wording-level deviations from the implementation in force at the time, and grading semantics follow the implementation — which is the released semantics. Policy v1.4 was the text-alignment round that brought the text in line with the implementation. The run-level policy field has been normalized to the released version.
+
+**Three policy-text eras.**
+ Three policy texts coexist in this release: the per-simulation embedded as-run text (5,663 chars each, 13 internal pitfall markers per copy, 200 sims per file — the text the leaderboard numbers were actually scored against), the run-level policy field (5,515 chars = published v1.4.1, normalized across all five rows), and the currently published policy.md (5,541 chars, v1.4.2 = v1.4.1 + version footer). Two **semantic** differences are called out explicitly: clause 2 — the as-run text says working days are "Monday–Friday (**excluding statutory holidays**)" while the published text says "(**this document applies no statutory-holiday adjustment** to deadline computation)"; the two are semantically opposed, and the implementation follows the published wording (scoring semantics = published semantics). Clause 13 — the as-run text required students to "confirm the make-up exam schedule **in the mini-program**", a requirement deleted from the published text (no system support). The as-run text is retained verbatim as evidence and never rewritten.
+
+**Limitations (complete list).**
+1. **Anchor dual role**: the anchor-row model also serves as the user simulator and the NL judge backend (a cost-driven design trade-off); sensitivity analysis is future work.
+2. **Single seed**: one 4-trial run per model with a fixed seed; the binomial standard error of pass^1≈0.8 is about **2.8 percentage points** (excluding within-task clustering, so the true uncertainty is larger); read row gaps of 0.01–0.03 at that scale.
+3. **Noise-level tiebreak**: ranks 3 and 4 share pass^4 = 0.680 and differ by **0.015** in pass^1 (3 trials out of 200) — inside sampling noise.
+4. **No cross-domain calibration**: absolute scores here are not comparable with the official leaderboard's absolute scores.
+5. **Zero-signal tasks 24/50**: 24 tasks have neither reference actions (actions=[]) nor env_assertions — process is unscored (v1.0.1 contract design); list: E01, E04, E05, E07, E08, E09, E10, E12, E13, E14, M01, M03, M06, M07, M08, M09, M15, M17, M18, M19, H05, H11, H13, H14.
+6. **Weak assertion discriminability**: 98 COMMUNICATE assertions across 50 tasks, **55 of them ≤3 characters** (56.1%), 9 ISO dates, 2 record ids (DF-007 / EN-0383).
+7. **Two rates, two meanings**: **530/530 = rule reproducibility** (a deterministic substring matcher reproduced every calibration verdict); **78.0% = human agreement on a constructively sampled calibration set (132 items)** — different quantities; about 60% of population-level MISSes are literal-format engineering noise.
+8. **Agent-side authorization asymmetry**: agent tools accept any student_id (same shape as the upstream retail domain); only the student side is bound — impersonation-style tasks test policy compliance, not tool enforcement.
 
 ## 5. Reproduce
 
@@ -190,6 +262,63 @@ Pass^1＝通过 trial 占比（共 200）；pass^4＝4/4 全过的题数（共 5
 
 任务时代披露：锚点行采集于断言串第一代（r1），其余四行采集于换串后；已发布跑批中的内嵌任务副本除 v2.0.0 的 QA 元数据清理外自跑批时点逐字保留——保留各行 as-run 断言串，语句层与现行公布 `tasks.json` 不同（任务时代披露），即各行判分口径的原始凭证。
 
+完整披露集（全部数字由已发布跑批资产程序化重算；本 README 中文半区内容相同）：
+
+**任务时代明细。**
+已发布跑批内嵌的任务副本（as-run 凭证，冻结）与现行发布任务集属两个时代。语句层 **50/50 题不同**。评分层（与现行发布比对，锚点行）：evaluation_criteria 差异 **12 题**（E12, H01, H05, H08, H13, H14, H15, M05, M06, M08, M12, M19），含 initial_state 共 **14 题**（＋H06, M03）。**五行共有 5 题**（M03/H06＝initial_state 差异；M05/H01/H15＝actions[].info 4 处文本）：
+
+| 题 | 差异面 |
+|---|---|
+| M03 | initial_state（种子/时间锚差异） |
+| H06 | initial_state（种子/时间锚差异） |
+| M05 | evaluation_criteria.actions[].info 文本 |
+| H01 | evaluation_criteria.actions[].info 文本 |
+| H15 | evaluation_criteria.actions[].info 文本 |
+
+**锚点独有 9 题**（其余四行的内嵌评分字段与现行发布一致；锚点持第一代断言串）：
+
+| 题 | 差异面 |
+|---|---|
+| E12 | communicate_info 断言串 |
+| M06 | actions 2→0 |
+| M08 | communicate_info 断言串 |
+| M12 | communicate_info 断言串 |
+| M19 | communicate_info 断言串 |
+| H05 | communicate_info 断言串 |
+| H08 | communicate_info 断言串 |
+| H13 | communicate_info 断言串 |
+| H14 | communicate_info 断言串 |
+
+**终止披露。**
+全量 1,000 场榜单 sims 中非 `user_stop` 终止恰 5 场：
+
+| 行 | trial | 终止原因 |
+|---|---|---|
+| Qwen3.8-Flash | M16 t2 | `too_many_errors` |
+| Qwen3.8-Flash | M16 t3 | `too_many_errors` |
+| GLM-5.3 | M16 t0 | `too_many_errors` |
+| GLM-5.3 | M16 t3 | `too_many_errors` |
+| MiMo-V2.6-Pro | E14 t1 | `infrastructure_error` |
+
+M16 一题吸收全部 4 次 `too_many_errors`（GLM-5.3 t0/t3、Qwen3.8-Flash t2/t3，工具调用错误数达上限）；MiMo E14 t1 为 `infrastructure_error`（上游瞬断重试耗尽，reward_info=None 计 0，工程噪声）。E14 t1 的双口径见 leaderboard-page「两套计分口径」。
+
+**难度分层。**
+| Row | easy | medium | hard | Note |
+|---|---|---|---|---|
+| DeepSeek V4.1-Flash | 1.0000 | 0.9625 | 0.9667 | hard > medium（非单调 / non-monotonic） |
+| Qwen3.8-Flash | 0.9667 | 0.8000 | 0.8333 | hard > medium（非单调 / non-monotonic） |
+| GLM-5.3 | 0.8333 | 0.8250 | 0.7500 |  |
+| GLM-5.3-Flash | 0.7833 | 0.8125 | 0.7667 |  |
+| MiMo-V2.6-Pro | 0.8833 | 0.8750 | 0.8000 |  |
+
+难度标签＝题集 id 前缀静态标注，未经难度实证标定；锚点与 Qwen 两行 hard>medium 非单调，分层在样本内不具统计区分力。
+
+**运行代码版本。**
+锚点行与锚点第二轮批次 `info.git_commit` = `d9960762`；其余四行 = `7d6cae5e`；发布 tag `campus-v2.1.0` = `72f430a`（跑批之后）。run-code 与发布 tag 之间的变更仅涉及任务陈述文本、守卫测试与文件编码，判分语义零变化——以参考动作回放 50/50 逐题双哈希（重放终态哈希与清洗前逐题相等）为证。
+
+**成本口径注。**
+GOAT credits **含 prompt 缓存效应**，密度（cr/M tok）随上游缓存命中率波动，**跨行不可直接比较**：GLM-5.3 无缓存收益按 fresh 计费 **1.63 cr/M**，MiMo 实测缓存命中 **98.9%** 密度仅 **0.122 cr/M**——同一量级 workload 下 13× 密度差本身即缓存行为差异的证据；DeepSeek 侧（user+judge）为折算价，锚点行 8.71 为 200-sim 子集参考值。引用于任何对比时须连同本口径注一并引用。
+
 ## 4. 协议与判分声明
 
 1. 多链程序任务以用户报学号开场（硬节拍；省略会诱发学号幻觉）。
@@ -206,6 +335,19 @@ Pass^1＝通过 trial 占比（共 200）；pass^4＝4/4 全过的题数（共 5
 **判分（judge）声明**：COMMUNICATE 项对 agent 全程回复文本做**确定性子串匹配**（空格/全半角不归一化）；DB 项为终态哈希比对；两项须同时通过。deepseek-flash 只产出判定文本——met/not-met 完全可由规则复现（校准 530/530）。改述因此可能记 MISS；母体约 60% MISS 属字面工程噪声而非能力失败。两个头条数字不可混读：**530/530＝规则可复现性**（确定性匹配器复现了全部校准判定），**78.0%＝构造性抽样校准集上的人工一致率**——两件事。
 
 as-run 政策披露：各次运行内嵌的政策文本（per-sim）为 v1.4 前原文，与当时实现存在措辞级偏差；判分语义以实现为准，即发布版语义。政策 v1.4 即把文本对齐到实现的那一轮。run-level 政策字段已归一为发布版。
+
+**三时代政策文本。**
+同一发布物中并存三份政策文本：逐 sim 内嵌的运行时原文（5,663 字符/份，每份含"坑点"标记 13 处，200 sims/文件——榜单数字实际读取的文本）、run-level 政策字段（5,515 字符，= v1.4.1 发布版，五行已归一）、现行发布 policy.md（5,541 字符，v1.4.2＝v1.4.1＋版本脚注）。两处**语义级**差异点名：第 2 条——运行时原文写"工作日指周一至周五（**法定节假日除外**）"，发布版写"（**本规程时限计算不引入法定节假日调整**）"，两者语义相反，实现按发布版（判分语义＝发布版语义）；第 13 条——运行时原文含"补缓考…**学生须在小程序确认补缓考安排**"要求，发布版已删除该要求（系统无承载）。运行时原文作为 as-run 凭证如实保留、不再改写。
+
+**局限披露（完整清单）。**
+1. **锚点双角色**：锚点行模型同时是 user simulator 与 NL judge 的后端（成本设计取舍）；敏感性分析列为 future work。
+2. **单 seed**：每模型单次 4-trial 采样（seed 固定），pass^1≈0.8 时二项式标准误约 **2.8 个百分点**（未计题内聚类，实际更大）；行间 0.01–0.03 差异按此量级解读。
+3. **噪声级决胜**：第 3/4 名 pass^4 同为 0.680、pass^1 相差 **0.015**（200 trial 中 3 个 trial），在抽样噪声量级内。
+4. **无跨域标定**：本页绝对分数与官方榜单绝对分数不可直接比较。
+5. **零信号题 24/50**：24 题既无参考动作（actions=[]）也无 env_assertions，过程不评分（v1.0.1 契约设计）；题单：E01, E04, E05, E07, E08, E09, E10, E12, E13, E14, M01, M03, M06, M07, M08, M09, M15, M17, M18, M19, H05, H11, H13, H14。
+6. **断言判别力弱**：50 题共 98 条 COMMUNICATE 断言，**55 条 ≤3 字**（56.1%）、9 条 ISO 日期、2 条记录号（DF-007 / EN-0383）。
+7. **两率区分**：**530/530＝确定性子串匹配器对全部校准判定的规则复现率**；**78.0%＝构造性抽样校准集（132 条）上的人工一致率**——两件事，不可混读；母体层面约 60% 的 MISS 属字面工程噪声。
+8. **agent 侧授权不对称**：agent 工具接受任意 student_id（与上游 retail 域同构），仅学生侧经 bind 绑定——代查类题考政策遵从而非工具强制。
 
 ## 5. 复现
 
