@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev/campus
+      - tau2-zh
     paths:
       - 'src/tau2/domains/campus/**'
       - 'data/tau2/domains/campus/**'
