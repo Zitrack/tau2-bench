@@ -7,7 +7,7 @@
   "task_count": 50,
   "hash_scope": "sha256 of each file's LF-normalized bytes (line-ending independent)",
   "files": {
-    "db.json": "046603a6551bf7885e5ab44b537df09031bc32eb893f92c2e49d193dc011cf32",
+    "db.json": "7cd6c8f903686228dfa00f04b4ebd4e921205c1c65b815d765c445643e3d76f1",
     "policy.md": "3f237d33143a9d681b38bd680cbc3b367bb0b127529315579754f8fce490650f",
     "split_tasks.json": "e4e88a75bd5852eb257fa1d026d4e73b55641439bce7b0acecc9b3fe18ae67b2",
     "tasks.json": "d0bf6ab901f31be46d62e5f7be93b5d17abcca35da63479d43959ded2d40e7e5",
