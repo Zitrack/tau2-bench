@@ -5,12 +5,12 @@
 
 ## 1. Domain overview
 
-`campus` is a natively designed **Chinese** domain for university academic-affairs service (course add/drop, exam deferrals, grade review & appeals, scholarships and aid, certificate issuing, student-status and tickets). It is *not* a translation: policy, database, tasks, and user personas are all written for the Chinese higher-education setting, while the scoring protocol stays exactly on the official τ²-bench v1.0.1 track (`reward_basis = [DB, COMMUNICATE]` + `env_assertions`; `RewardType.ACTION` not used), so results read directly against the official leaderboard conventions.
+`campus` is a natively designed **Chinese** domain for university academic-affairs service (course add/drop, exam deferrals, grade review & appeals, scholarships and aid, certificate issuing, student-status and tickets). It is *not* a translation: policy, database, tasks, and user personas are all written for the Chinese higher-education setting, while the scoring protocol stays exactly on the official τ²-bench v1.0.1 track (`reward_basis = [DB, COMMUNICATE]` + `env_assertions`; `RewardType.ACTION` not used), so scores follow the official v1.0.1 scoring contract; absolute levels are not comparable across different task sets.
 
 - **Policy**: `data/tau2/domains/campus/policy.md` — a 36-article service regulation for the fictional university, deliberately packed with time-boundary traps (the add-drop window, deferral deadlines, the maintenance window, month-end settlement, tiered appeals…).
 - **Tasks**: 50 tasks (`tasks.json` + `split_tasks.json`, splits `base` / `easy` / `medium` / `hard`), difficulty 15 / 20 / 15; **29 zero-write tasks (of which 20 carry explicit refusal semantics)** (privacy, skipping appeal levels, out-of-scope requests); every task carries scripted user personas with non-cooperative behavior.
-- **Data**: `db.json` (14 tables) + `user_db.json` (students act through their own app).
-- **Tests**: `tests/test_domains/test_campus/` — 157 pytest cases (tools, replay, contract, full 50-task gold-replay CI, deadline-guard matrix, state-machine invariants).
+- **Data**: `db.json` (11 business tables + `env`) + `user_db.json` (3 tables), 14 tables in total (students act through their own app).
+- **Tests**: `tests/test_domains/test_campus/` — 167 pytest cases (tools, replay, contract, full 50-task gold-replay CI, task self-consistency lint, upstream-contract pins, deadline-guard matrix, state-machine invariants).
 
 ## 2. Dual-control design
 
@@ -21,7 +21,7 @@ Following the τ²-bench dual-control protocol, **both** sides hold tools:
 | Agent (customer-service) | **15** tools (`tools.py`) | look up, apply, withdraw, create tickets… must guide the student to complete multi-step procedures |
 | Student (simulated user) | **4** user tools (`user_tools.py`) | upload materials, confirm/sign, and **refuse** — the agent cannot do these *for* the student |
 
-Hard tasks are multi-chain: the student must perform 3–4 actions in their own app while the agent keeps the procedure consistent (e.g. withdrawal requires agent request + student signature). The user simulator is driven by per-task scripted personas (six archetypes + a compliance dimension, non-cooperative by design), so an over-cooperative user cannot silently complete the task for the agent.
+Hard tasks are multi-chain: the student must perform 3–4 actions in their own app while the agent keeps the procedure consistent (e.g. withdrawal requires agent request + student signature). The user simulator is driven by per-task scripted personas (six archetypes + a compliance dimension); the cooperation level is backstopped by the per-task refusal constraints in `task_instructions` (38/50 tasks explicitly refuse agent-proposed proxy actions), so an over-cooperative user cannot silently complete the task for the agent.
 
 ## 3. Leaderboard (5 rows / 4 vendors, by pass^4)
 
@@ -39,6 +39,10 @@ Pass^1 = share of passing trials (of 200); pass^4 = tasks passing **4/4** (of 50
 
 All numbers are recomputed programmatically from `results.json` (never hand-copied). Row 5 includes 1 infrastructure-failed trial in the pre-patch as-run (upstream outage): excluding it gives 0.840 / 0.660 pre-patch and 0.860 / 0.680 on the current v1.1.1 overlay — both calibers are documented. Closed-source flagship models were intentionally not run (cost vs. information gain); the anchor row carries the ceiling reference.
 
+Difficulty tiers are design-time labels (15 easy / 20 medium / 15 hard); observed per-tier pass rates are shown in the table above, and between-tier differences are not statistically separable at this sample size (60–80 trials per tier).
+
+Task-era disclosure: the anchor row was collected on the first generation of assertion strings (r1); the other four rows were collected after the assertion strings were revised. The embedded task copies inside each published run are preserved verbatim and are the primary evidence of each row's grading caliber.
+
 ## 4. Protocol & grading declarations
 
 1. Tasks with multi-chain procedures open with the user stating their student ID (hard beat; omitting it provokes ID hallucination).
@@ -48,23 +52,27 @@ All numbers are recomputed programmatically from `results.json` (never hand-copi
 5. Non-cooperative personas are fixed across all tested models (per-task scripted in `tasks.json` + `personas`).
 6. seed=20261004, temperature=0 (agent/user/judge), max_steps=60 for every run.
 
+Zero-signal disclosure: 24 of the 50 tasks carry neither gold actions nor `env_assertions` — this is by design under the v1.0.1 contract (the DB component punishes spurious writes; process quality is not scored).
+
 Scoring-contract note: all 50 tasks ship `reward_basis=[DB, COMMUNICATE]` (the upstream default); the 54 `env_assertions` across 25 tasks are diagnostic outputs (reported in `RewardInfo.env_assertions`) and do not gate the reward, per the official v1.0.1 contract (docs/evaluation.md).
 
-**Grading (judge) statement**: COMMUNICATE items use **deterministic substring matching** against the agent's full reply text (no whitespace/full-width normalization); DB items use terminal-state hash comparison; both must pass. The `deepseek-flash` model only writes justification text — the met/not-met decision is fully reproducible by rule (530/530 in calibration). Paraphrases may therefore score as misses; ~60% of misses in the audited population are such string-level engineering noise rather than capability failures.
+**Grading (judge) statement**: COMMUNICATE items use **deterministic substring matching** against the agent's full reply text (no whitespace/full-width normalization); DB items use terminal-state hash comparison; both must pass. The `deepseek-flash` model only writes justification text — the met/not-met decision is fully reproducible by rule (530/530 in calibration). Paraphrases may therefore score as misses; ~60% of misses in the audited population are such string-level engineering noise rather than capability failures. The two headline validation figures must not be conflated: **530/530 = rule-reproducibility** (the deterministic matcher reproduces every calibration decision), while **78.0% = human agreement on a constructively sampled calibration set** — two different things.
+
+As-run policy disclosure: the policy text embedded in each run (per-sim) is the pre-v1.4 original; it has wording-level deviations from the implementation in force at the time, and grading semantics follow the implementation — which is the released semantics. Policy v1.4 was the text-alignment round that brought the text in line with the implementation. The run-level policy field has been normalized to the released version.
 
 ## 5. Reproduce
 
 > Pin a revision: the default branch (`tau2-zh`) is a showcase snapshot, not the benchmark code.
 
 ```sh
-git clone --branch campus-v2.0.0 https://github.com/Zitrack/tau2-bench
+git clone --branch campus-v2.1.0 https://github.com/Zitrack/tau2-bench
 # latest pinned release: https://github.com/Zitrack/tau2-bench/releases/latest
 cd tau2-bench
 
 # install (Python >=3.12,<3.14)
 uv sync
 
-# domain tests (157 cases)
+# domain tests (167 cases)
 uv run pytest tests/test_domains/test_campus
 
 # validate data
@@ -102,6 +110,7 @@ Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.0798
 
 ## 8. Changelog
 
+- **v2.1.0 (2026-10-07) — task-statement cleanup, guard expansion (policy v1.4.2).** Every string leaf of the published task set was swept for authoring markers: **101 sites** cleaned — leading test-point fragments (50), internal decision/version tags (`D-S…`/`v1.x`) across purposes, relevant-policy notes, and gold-action info strings (ticket-spec references genericized), plus two author-version annotations inside user-scenario scripts (cleaned under an explicit two-site exception to the "instructions byte-identical" rule). M06's task statement was rewritten to match its actual zero-write refusal semantics and E12's stale expectation dropped. **The scoring contract is untouched** — `communicate_info`, gold actions, `env_assertions`, initial state, and per-task user-tool surfaces are byte-identical; per-task double-hash replay is identical to v2.0.0. Policy **v1.4.2** adds a single version footer line (article text unchanged). New guards: full-leaf marker scan, task self-consistency lint (tool-surface reachability, refusal semantics for zero-action tasks, user-side gold actions), three upstream-contract pins; `solo_mode` now raises per upstream convention; `io_utils` gains UTF-8 on write paths and trajectory readers. pytest **157→167**. **Leaderboard numbers remain the v2.0.0-era as-run results** (no re-runs); the release notes disclose the task-statement deltas.
 - **v2.0.0 (2026-10-06) — data-contract release.** Internal QA metadata fully removed from the public dataset: `description.notes` dropped across all 50 tasks, `issues` keys removed, and P0x hint fragments scrubbed from the agent-visible `purpose` / `relevant_policies` fields — the embedded task copies inside the published raw runs are normalized to the same contract (trajectory bodies preserved verbatim). `policy.md` meta-annotations (13 grading-marker tags, internal version labels, header changelog) removed with article text unchanged → policy **v1.4.1**; the as-run policy text inside historical trajectories is preserved verbatim. Calibers redefined & recomputed: **54** env_assertions (25 tasks), **29 zero-write tasks (20 with explicit refusal semantics)**, pytest **147→157** (81 test functions, incl. the 50-task gold-replay parametrization). Release engineering: fork-side CI, UTF-8 fix in `io_utils` (Windows GBK), root-README banner, runtime benchmark metadata, raw runs & judge calibration published as release assets. Gold-replay CI 50/50 maintained at every step.
 - **v1.1.5 (2026-10-06) — release discoverability & runtime version metadata.** The root `README.md` gains a fork banner (latest tag / domain README / dataset / protocol / upstream-PR links) so release tags are self-explanatory when cloned; `tau2.domains.campus` now exposes runtime-readable `__version__` (benchmark axis), `POLICY_VERSION`, and `SCORING_PROTOCOL` — the engine package version (`tau2 == 1.0.1`) stays pinned in `pyproject.toml` for leaderboard comparability. Code-only; dataset files unchanged. Tag `campus-v1.1.5`. 147 tests green.
 - **v1.1.4 (2026-10-06) — art. 33 closure details (proxy-pickup).** Validity of the proxy-pickup authorization code now anchors to the **signing time** (`auth_sig.acted_at + 30d`), not the later document-upload time, when the "sign first, upload later" path completes the loop; `get_service_requests` distinguishes the two causes of pending-signature — unsigned → 缺签署（代领授权书）, signed-but-missing-ID → 缺受托人证件影像（第 33 条）— so agents are no longer steered to re-sign. Zero gold impact (no gold task contains the affected strings or the sign-first path); gold-replay CI 50/50, 146 tests green. Fix commit lands after tag `campus-v1.1.3`; use tag `campus-v1.1.4` for the corrected pin.
@@ -120,7 +129,7 @@ Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.0798
 
 ## 1. 域概要
 
-`campus` 是为中文高校教务场景**原生设计**（非翻译）的域：选课/补退选、考试缓考、成绩查分与申诉、奖助学金、证明开具、学籍与工单。政策（36 条，含补退选窗口、缓考时限、维护窗口、月末结账、逐级申诉等时限坑）、数据库（14 表）、50 题任务（easy 15 / medium 20 / hard 15，含 29 道零写任务，其中 20 道具有明确拒绝语义）与 persona 全部中文原生；判分口径与官方同构（`[DB, COMMUNICATE]` + `env_assertions`，不用 ACTION），结果可与官方榜单同读。
+`campus` 是为中文高校教务场景**原生设计**（非翻译）的域：选课/补退选、考试缓考、成绩查分与申诉、奖助学金、证明开具、学籍与工单。政策（36 条，含补退选窗口、缓考时限、维护窗口、月末结账、逐级申诉等时限坑）、数据库（`db.json`＝11 业务表＋`env`、`user_db.json`＝3 表，合计 14 表）、50 题任务（easy 15 / medium 20 / hard 15，含 29 道零写任务，其中 20 道具有明确拒绝语义）与 persona 全部中文原生；判分口径与官方同构（`[DB, COMMUNICATE]` + `env_assertions`，不用 ACTION），分数遵循官方 v1.0.1 判分契约；绝对水平不可跨任务集比较。
 
 ## 2. 双控设计
 
@@ -131,7 +140,7 @@ Please also cite the benchmark itself: τ²-bench — Si et al., arXiv:2506.0798
 | Agent（客服侧） | **15** 个工具（`tools.py`） | 查询/申请/撤回/建单……必须引导学生走完多步流程 |
 | 学生（模拟用户） | **4** 个用户工具（`user_tools.py`） | 上传材料、确认签署、**拒绝**——这些动作 agent 无法代做 |
 
-难题为多链并发：学生须在自己的 App 里完成 3–4 个动作，同时 agent 保持流程一致（如撤回＝agent 发起＋学生签署）。user simulator 由逐题钉死脚本（六型 persona＋顺从维度，非合作设计）驱动，防止过度合作的模拟用户替 agent 悄悄完成任务。
+难题为多链并发：学生须在自己的 App 里完成 3–4 个动作，同时 agent 保持流程一致（如撤回＝agent 发起＋学生签署）。user simulator 由逐题钉死脚本（六型 persona＋顺从维度）驱动；配合度由逐题 `task_instructions` 的拒绝约束兜底（38/50 题显式拒绝 agent 提议的代办操作），防止过度合作的模拟用户替 agent 悄悄完成任务。
 
 ## 3. 榜单（5 行 / 4 家厂商，按 pass^4 降序）
 
@@ -149,6 +158,10 @@ Pass^1＝通过 trial 占比（共 200）；pass^4＝4/4 全过的题数（共 5
 
 全部数字均由 `results.json` 程序化重算（绝不手抄）。第 5 行在修复前 as-run 中含 1 个基础设施故障 trial（上游故障）：剔除后修复前为 0.840 / 0.660、现行 v1.1.1 overlay 为 0.860 / 0.680——两种口径均已披露。闭源旗舰模型有意未跑（成本 vs 信息增益）；锚点行承担天花板参照。
 
+难度分层为设计期标签（易 15 / 中 20 / 难 15）；上表给出各层实测通过率，在本样本量下（每层 60–80 trials）层间差异不具统计可分性。
+
+任务时代披露：锚点行采集于断言串第一代（r1），其余四行采集于换串后；已发布跑批中的内嵌任务副本逐字保留，即各行判分口径的原始凭证。
+
 ## 4. 协议与判分声明
 
 1. 多链程序任务以用户报学号开场（硬节拍；省略会诱发学号幻觉）。
@@ -158,23 +171,27 @@ Pass^1＝通过 trial 占比（共 200）；pass^4＝4/4 全过的题数（共 5
 5. 非合作 persona 在全部被测模型间固定（`tasks.json` + persona 逐题脚本）。
 6. 每次运行均为 seed=20261004、temperature=0（agent/user/judge）、max_steps=60。
 
+零信号披露：50 题中 24 题既无金标 actions 也无 env_assertions——系 v1.0.1 契约设计（DB 分量罚乱写，过程不评分）。
+
 判分契约说明：50 题 reward_basis 均为 [DB, COMMUNICATE]（上游默认）；25 题的 54 条 env_assertions 为诊断性输出（见 RewardInfo.env_assertions），不计入 reward 判分，与官方 v1.0.1 文档契约一致。
 
-**判分（judge）声明**：COMMUNICATE 项对 agent 全程回复文本做**确定性子串匹配**（空格/全半角不归一化）；DB 项为终态哈希比对；两项须同时通过。deepseek-flash 只产出判定文本——met/not-met 完全可由规则复现（校准 530/530）。改述因此可能记 MISS；母体约 60% MISS 属字面工程噪声而非能力失败。
+**判分（judge）声明**：COMMUNICATE 项对 agent 全程回复文本做**确定性子串匹配**（空格/全半角不归一化）；DB 项为终态哈希比对；两项须同时通过。deepseek-flash 只产出判定文本——met/not-met 完全可由规则复现（校准 530/530）。改述因此可能记 MISS；母体约 60% MISS 属字面工程噪声而非能力失败。两个头条数字不可混读：**530/530＝规则可复现性**（确定性匹配器复现了全部校准判定），**78.0%＝构造性抽样校准集上的人工一致率**——两件事。
+
+as-run 政策披露：各次运行内嵌的政策文本（per-sim）为 v1.4 前原文，与当时实现存在措辞级偏差；判分语义以实现为准，即发布版语义。政策 v1.4 即把文本对齐到实现的那一轮。run-level 政策字段已归一为发布版。
 
 ## 5. 复现
 
 > 请基于钉定修订跑基准：默认分支（tau2-zh）为展示快照，非基准代码。
 
 ```sh
-git clone --branch campus-v2.0.0 https://github.com/Zitrack/tau2-bench
+git clone --branch campus-v2.1.0 https://github.com/Zitrack/tau2-bench
 # latest pinned release: https://github.com/Zitrack/tau2-bench/releases/latest
 cd tau2-bench
 
 # 安装（Python >=3.12,<3.14）
 uv sync
 
-# 域测试（157 项）
+# 域测试（167 项）
 uv run pytest tests/test_domains/test_campus
 
 # 数据校验
@@ -212,6 +229,7 @@ uv run tau2 evaluate-trajs <results.json> --fresh-tasks
 
 ## 8. 变更记录
 
+- **v2.1.0（2026-10-07）——任务陈述清洗与守卫扩展（政策 v1.4.2）**：公开任务集全部字符串叶清扫作者标记：**101 处**——前导"考点"残迹（50 处）、purpose/相关条款/金标动作 info 中的内部决策与版本标注（`D-S…`/`v1.x`）删除、工具规格引用改中性通称，以及两处 user-scenario 剧本中的作者版本标注（经明示两站点例外——"instructions 逐字节不变"条款恰对此两点修订）。M06 任务陈述重写为零写拒绝语义、E12 陈旧期望句删除。**判分契约零触碰**——`communicate_info`、金标动作、`env_assertions`、initial_state、逐题工具面逐字节不变；逐题双哈希重放与 v2.0.0 完全一致。政策 **v1.4.2** 增加单行版本脚注（条款正文不变）。新增守卫：全叶标记扫描、任务自洽 lint（工具面可达性、零动作题拒绝语义、user 侧金标动作）、三项上游契约钉；`solo_mode` 按上游规范改为抛错；`io_utils` 写侧与轨迹读取补 UTF-8。pytest **157→167**。**榜单数字仍为 v2.0.0 时代任务的 as-run 结果**（未重跑）；任务陈述差异在 Release notes 中披露。
 - **v2.0.0（2026-10-06）——数据契约版本**：公开数据集内部 QA 元数据全量移除——50 题 `description.notes` 剥离、`issues` 键删除、agent 可见 `purpose`/`relevant_policies` 中 P0x 提示片段清除（已发布原始跑批中的内嵌任务副本同步对齐，轨迹本体逐字保留）；`policy.md` 元注记清除（13 个判分标记＋内部版本标签＋头部变更日志）——条款正文零触碰，政策版本 **v1.4.1**；历史轨迹中的 as-run 政策文本按原样保留。口径重定义并重算：**54** 条 env_assertions（25 题）、**29 道零写任务（其中 20 道具明确拒绝语义）**、pytest **147→157**（81 个测试函数，含 50 题金标重放参数化）。发布工程：fork-side CI、`io_utils` UTF-8 修复（Windows GBK）、根 README 横幅、运行时基准元数据、原始跑批与判分校准作为 Release assets 公开。全程金标重放 CI 50/50。
 - **v1.1.5（2026-10-06）——发布可发现性与运行时版本元数据**：根 `README.md` 顶部增加 fork 横幅（最新 tag／域 README／数据集／协议／上游 PR 链接），clone 发布 tag 后即自解释；`tau2.domains.campus` 暴露运行时可读的 `__version__`（基准轴）、`POLICY_VERSION` 与 `SCORING_PROTOCOL`——引擎包版本（`tau2 == 1.0.1`）仍钉在 `pyproject.toml` 以保证榜单可比性。仅代码变更，数据集文件零变化。tag `campus-v1.1.5`。147 项测试全绿。
 - **v1.1.4（2026-10-06）——第 33 条闭环细节（代领授权）**：先签后传路径闭环推进时，代领授权码有效期锚定为**签署时刻**（`auth_sig.acted_at + 30 日`），不再按后置上传时刻起算；`get_service_requests` 对"待签署"按成因分流——未签署 → 缺签署（代领授权书），已签署缺证件 → 缺受托人证件影像（第 33 条）——不再误导 agent 重新签署。对金标零影响（受影响字符串与先签后传路径均不在金标中）；金标重放 CI 50/50，146 项测试全绿。修复提交位于 tag `campus-v1.1.3` 之后，修正版请用 tag `campus-v1.1.4`。
