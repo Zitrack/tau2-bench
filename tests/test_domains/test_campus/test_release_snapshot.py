@@ -25,19 +25,30 @@ Freezes two kinds of "must not drift back" facts as pytest assertions:
 Version linkage: ``POLICY_VERSION == "1.4.2"`` is the **current contract
 value**. If a future release bumps it, this assertion and the release
 manifest must be updated **in the same change** — they move together.
+The same lockstep holds for the benchmark axis: ``manifest.json``
+(benchmark_version / policy_version / task_count / per-file SHA-256 of
+the five data payloads) must agree with the runtime constants, with the
+domain README (both language halves), and with the data files on disk —
+see the manifest section at the bottom of this module.
 
 A failure here means a cleaned field regressed (or an authorized version
 bump landed without updating this snapshot): fix the drift or update the
 snapshot deliberately — never weaken the assertions to get green.
 """
 
+import hashlib
 import json
 import re
+from pathlib import Path
 
 import pytest
 
 import tau2.domains.campus as campus
-from tau2.domains.campus.utils import CAMPUS_POLICY_PATH, CAMPUS_TASK_SET_PATH
+from tau2.domains.campus.utils import (
+    CAMPUS_DATA_DIR,
+    CAMPUS_POLICY_PATH,
+    CAMPUS_TASK_SET_PATH,
+)
 
 # --- fixtures (read once per module) -------------------------------------
 
@@ -337,4 +348,66 @@ def test_policy_has_version_footer(policy_text):
     assert match.group(1) == campus.POLICY_VERSION, (
         f"policy footer v{match.group(1)} != POLICY_VERSION "
         f"{campus.POLICY_VERSION} — bump both in the same change"
+    )
+
+
+# --- manifest.json — machine-readable code↔data pairing -------------------
+#
+# ``manifest.json`` binds the benchmark version, the policy version, the task
+# count and the per-file SHA-256 of the five data payloads to this code tree.
+# Hashes are computed over each file's LF-normalized bytes, so the recorded
+# digests hold regardless of checkout line endings (CRLF worktree vs LF CI).
+
+MANIFEST_DATA_PAYLOADS = frozenset(
+    {"db.json", "policy.md", "split_tasks.json", "tasks.json", "user_db.json"}
+)
+
+
+@pytest.fixture(scope="module")
+def manifest() -> dict:
+    return json.loads((CAMPUS_DATA_DIR / "manifest.json").read_text(encoding="utf-8"))
+
+
+def test_manifest_version_constants_twin(manifest):
+    """__version__ / POLICY_VERSION / SCORING_PROTOCOL ⇔ manifest: moving
+    either side without the other fails here (same-change discipline).
+    ``code_commit`` / ``dataset_revision`` are placeholders until release
+    and are filled then — only their presence is pinned."""
+    assert manifest["benchmark_version"] == campus.__version__
+    assert manifest["policy_version"] == campus.POLICY_VERSION
+    assert manifest["evaluator_protocol"] == campus.SCORING_PROTOCOL
+    assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["benchmark_version"])
+    assert manifest["code_commit"], "code_commit placeholder must be present"
+    assert manifest["dataset_revision"], "dataset_revision placeholder must be present"
+
+
+def test_manifest_data_file_hashes(manifest):
+    """Per-file digests ⇔ bytes on disk: editing any data payload without
+    regenerating manifest.json fails here, and vice versa."""
+    assert set(manifest["files"]) == MANIFEST_DATA_PAYLOADS
+    for name, recorded in sorted(manifest["files"].items()):
+        path = CAMPUS_DATA_DIR / name
+        assert path.exists(), f"data payload missing: {name}"
+        digest = hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+        assert digest == recorded, (
+            f"{name}: manifest sha256 {recorded[:12]} != actual {digest[:12]} "
+            "— regenerate manifest.json together with the data change"
+        )
+
+
+def test_manifest_task_count_twin(manifest, tasks):
+    assert manifest["task_count"] == len(tasks) == 50
+
+
+def test_domain_readme_states_current_policy_version(manifest):
+    """manifest ⇔ domain README: both language halves of the README state
+    the current policy version, so the constant, the machine-readable
+    manifest and the documentation cannot silently drift apart."""
+    assert manifest["policy_version"] == campus.POLICY_VERSION
+    readme = Path(campus.__file__).with_name("README.md")
+    text = readme.read_text(encoding="utf-8")
+    stated = f"v{campus.POLICY_VERSION}"
+    assert text.count(stated) >= 2, (
+        f"domain README must state {stated} in both language halves "
+        f"(found {text.count(stated)})"
     )

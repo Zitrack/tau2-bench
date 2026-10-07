@@ -1,0 +1,16 @@
+{
+  "benchmark_version": "2.2.0",
+  "policy_version": "1.4.2",
+  "evaluator_protocol": "tau2-v1.0.1-compatible",
+  "code_commit": "filled at release",
+  "dataset_revision": "filled at release",
+  "task_count": 50,
+  "hash_scope": "sha256 of each file's LF-normalized bytes (line-ending independent)",
+  "files": {
+    "db.json": "046603a6551bf7885e5ab44b537df09031bc32eb893f92c2e49d193dc011cf32",
+    "policy.md": "3f237d33143a9d681b38bd680cbc3b367bb0b127529315579754f8fce490650f",
+    "split_tasks.json": "e4e88a75bd5852eb257fa1d026d4e73b55641439bce7b0acecc9b3fe18ae67b2",
+    "tasks.json": "d0bf6ab901f31be46d62e5f7be93b5d17abcca35da63479d43959ded2d40e7e5",
+    "user_db.json": "1304ec0fe88a0f3bea300415992c1b62eb9bfe495b045f73edc4f432b5f2fd6e"
+  }
+}
