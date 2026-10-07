@@ -1324,7 +1324,7 @@ class CampusTools(ToolKitBase):
     @is_tool(ToolType.WRITE)
     def submit_deferral(self, student_id: str, offering_id: str, exam_id: str,
                         reason_type: str, filing_type: str) -> DeferralResult:
-        """缓考申请（第12/13条 P02/P13）。冲突限考前正常申报；因病限考后3个工作日内；同课程本学期仅一次（已撤回不占额度）。
+        """缓考申请（第12/13条）。冲突限考前正常申报；因病限考后3个工作日内；同课程本学期仅一次（已撤回不占额度）。
 
         Args:
             student_id: 学号。
@@ -1402,7 +1402,7 @@ class CampusTools(ToolKitBase):
 
     @is_tool(ToolType.WRITE)
     def submit_scholarship_app(self, student_id: str, award_id: str, channel: str = "常规") -> AwardAppResult:
-        """奖助申请（第23–28条）。受理即时资格校验，任一不过逐条拒绝零写入；通过置'待签署'+SIG。
+        """奖助申请（第23–28条）。受理即时资格校验，任一不符即逐条拒绝（拒绝不落库）；通过置'待签署'+SIG。
 
         Args:
             student_id: 学号。
@@ -1469,7 +1469,7 @@ class CampusTools(ToolKitBase):
     def request_certificate(self, student_id: str, cert_type: str, language: str = "中",
                             copy_count: int = 1, delivery: str = "电子",
                             proxy_name: str = "", proxy_id_masked: str = "") -> CertResult:
-        """证明开具（第30–33条 P12）。月末结账内顺延；代领需授权签署；英文成绩单未公布/缓成绩仅出已记载部分。
+        """证明开具（第30–33条）。月末结账内顺延；代领需授权签署；英文成绩单未公布/缓成绩仅出已记载部分。
 
         Args:
             student_id: 学号。
@@ -1540,9 +1540,9 @@ class CampusTools(ToolKitBase):
     def create_ticket(self, student_id: str, category: str, module: str, title: str,
                       content: str, parent_ticket_id: str = "",
                       target_grade_id: str = "") -> TicketResult:
-        """工单（第34/35条）。仅拦'申诉+成绩+逾期'（v1.1-F2）；复核申诉必须挂学院原工单（越级 E-LEVEL）。
+        """工单（第34/35条）。仅拦'申诉+成绩+逾期'组合；复核申诉必须挂学院原工单（不得越级）。
         申诉+成绩可选传 target_grade_id 按该成绩判 5 工作日窗（第16条）；
-        不传（默认空）时判窗行为与不带该参数完全一致（沿用原有"任一成绩在窗"扫描）。
+        不传（默认空）时判窗行为与不带该参数完全一致（按"任一成绩在窗"口径）。
 
         Args:
             student_id: 学号。
@@ -1607,8 +1607,8 @@ class CampusTools(ToolKitBase):
 
     @is_tool(ToolType.WRITE)
     def withdraw_application(self, student_id: str, kind: str, record_id: str) -> WithdrawResult:
-        """撤回申请（第13/30条；T7 裁定采纳方案，R2-review-record §3）。
-        CE 限出具前撤回（v1.1-F4），DF/APP 限签署确认前撤回（v1.1-F1）；撤回不占额度/不产生记录。
+        """撤回申请（第13/30条）。
+        CE 限出具前撤回，DF/APP 限签署确认前撤回；撤回不占额度/不产生记录。
         SIG 拒签撤回仍走学生侧 reject_suggestion。
 
         Args:
