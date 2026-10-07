@@ -4,7 +4,7 @@
 >
 > **[简体中文](#项目简介与榜单)** · Domain PR: **[#596](https://github.com/sierra-research/tau2-bench/pull/596)** · Dataset: **[ZitrackHF/tau2-zh-campus](https://huggingface.co/datasets/ZitrackHF/tau2-zh-campus)** · Upstream README: [`main` branch](https://github.com/sierra-research/tau2-bench)
 >
-> **Code pin**: benchmark off tag [`campus-v2.0.0`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.0.0) or branch `dev/campus` — this default branch is a showcase snapshot, not the benchmark code.
+> **Code pin**: benchmark off tag [`campus-v2.1.0`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.1.0) or branch `dev/campus` — this default branch is a showcase snapshot, not the benchmark code.
 
 The full domain documentation lives at [`src/tau2/domains/campus/README.md`](src/tau2/domains/campus/README.md). This root page is the project showcase.
 
@@ -14,9 +14,9 @@ The full domain documentation lives at [`src/tau2/domains/campus/README.md`](src
 
 - **Policy engineering** — a 36-clause Chinese regulation with 14 engineered edge-case clauses (time windows, prerequisites, exceptions, cross-references, maintenance windows, per-semester quotas).
 - **Dual-control environment** — the simulated *student* operates their own campus-app tools (upload documents, confirm/sign); the agent can only **guide**, hitting τ²'s core finding that guiding a user is harder than acting alone.
-- **50 tasks** (15 easy / 20 medium / 15 hard, incl. 17 refusal tasks scored by zero-DB-write), a seeded 14-table database, 15 agent tools + 4 student tools, all-Chinese error messages.
+- **50 tasks** (15 easy / 20 medium / 15 hard, incl. 29 zero-write tasks — 20 with explicit refusal semantics), a seeded dual database of 14 tables (11 business + env anchor + 3 student-app), 15 agent tools + 4 student tools, all-Chinese error messages.
 - **Deterministic scoring** — DB dual-hash (agent + user sides) + entity-substring checks; no LLM judge in the reward path.
-- **157 tests** covering the error catalog, state machines, deadline-guard matrix, and a **50-task gold-replay CI** (any exception or invariant violation fails the suite; countermeasure aligned with upstream #499).
+- **167 tests** covering the error catalog, state machines, deadline-guard matrix, task self-consistency lint, upstream-contract pins, and a **50-task gold-replay CI** (any exception or invariant violation fails the suite; countermeasure aligned with upstream #499).
 
 ## Leaderboard — 5 LLMs × 50 tasks × 4 trials (= 200 simulations per model)
 
@@ -38,9 +38,9 @@ Full protocol, judge calibration (132-sample human study), and failure typology:
 ## Reproduce
 
 ```bash
-git clone --branch campus-v2.0.0 https://github.com/Zitrack/tau2-bench && cd tau2-bench
+git clone --branch campus-v2.1.0 https://github.com/Zitrack/tau2-bench && cd tau2-bench
 uv sync
-pytest tests/test_domains/test_campus          # 157 tests
+pytest tests/test_domains/test_campus          # 167 tests
 uv run tau2 run --domain campus --agent llm_agent \
   --agent-llm <provider>/<model> \
   --user user_simulator --user-llm deepseek/deepseek-flash \
@@ -51,9 +51,10 @@ uv run tau2 run --domain campus --agent llm_agent \
 
 Latest first; full history in [Releases](https://github.com/Zitrack/tau2-bench/releases) and the domain [Changelog](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-changelog):
 
-- **v2.0.0 (2026-10-06)** — data-contract release (44-item audit remediation): QA metadata stripped from public dataset & raw runs (notes/issues/P0x); policy meta-annotations scrubbed → v1.4.1; calibers recomputed (54 env_assertions / 29 zero-write incl. 20 refusal / 157 pytest); raw runs & judge calibration published as release assets. [Tag & manifest](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.0.0).
+- **v2.1.0 (2026-10-07)** — task-statement cleanup & guard expansion (policy v1.4.2): authoring markers swept from every task-text leaf (101 sites), M06's statement rewritten to its zero-write refusal semantics; policy gains a version footer (article text unchanged); guards: full-leaf marker scan, task self-consistency lint, upstream-contract pins, solo-mode raise; **167 tests**. Scoring contract byte-identical to v2.0.0; leaderboard numbers remain the v2.0.0-era as-run results. [Tag & manifest](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.1.0).
+- **v2.0.0 (2026-10-06)** — data-contract release: QA metadata stripped from public dataset & raw runs (notes/issues/P0x); policy meta-annotations scrubbed → v1.4.1; calibers recomputed (54 env_assertions / 29 zero-write incl. 20 refusal / 157 pytest); raw runs & judge calibration published as release assets. [Tag & manifest](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.0.0).
 - **v1.1.5 (2026-10-06)** — release discoverability & runtime version metadata: fork banner on the root `README.md` (release tags are self-explanatory on clone); `tau2.domains.campus.__version__` / `POLICY_VERSION` / `SCORING_PROTOCOL` exposed at runtime (engine stays `tau2==1.0.1`). [Tag & manifest](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.5).
-- **v1.1.4 (2026-10-06)** — round-4 review fixes: authorization-code validity anchored to the **signing time** (art. 33); service requests distinguish missing-ID vs missing-sign (no more re-sign steering). [Tag & manifest](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.4).
+- **v1.1.4 (2026-10-06)** — proxy-pickup closure details (art. 33): authorization-code validity anchored to the **signing time** (art. 33); service requests distinguish missing-ID vs missing-sign (no more re-sign steering). [Tag & manifest](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.4).
 - **v1.1.3 (2026-10-06)** — proxy-pickup document closure (art. 33); ticket `target_grade_id` is window-input only (art. 16); public `tasks.json` stripped of internal QA metadata.
 - **v1.1.2 (2026-10-06)** — undeclared hospital level → returned-for-supplement (art. 12); confirmation receipts agree with settled state.
 - **v1.1.1 (2026-10-05/06)** — hardening: pre-settle, user-side deadline guards, special-channel terminal transition, monotonic waitlist positions; H01/H06 gold re-anchored (40-sim overlay).
@@ -69,7 +70,7 @@ Dataset (tasks / policy / seed DBs): [huggingface.co/datasets/ZitrackHF/tau2-zh-
 | `dev/campus` | the exact branch the upstream PR #596 is filed from |
 | `src/tau2/domains/campus/` | domain code: `data_model / user_data_model / tools / user_tools / environment` |
 | `data/tau2/domains/campus/` | `policy.md` + `db.json` + `user_db.json` + `tasks.json` (50) + `split_tasks.json` |
-| `tests/test_domains/test_campus/` | 157 tests |
+| `tests/test_domains/test_campus/` | 167 tests |
 
 ## License & credits
 
@@ -85,7 +86,7 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 >
 > Domain PR: **[#596](https://github.com/sierra-research/tau2-bench/pull/596)** · 数据集：**[ZitrackHF/tau2-zh-campus](https://huggingface.co/datasets/ZitrackHF/tau2-zh-campus)** · 上游 README：[`main` 分支](https://github.com/sierra-research/tau2-bench)
 >
-> **代码锚点**：请基于 tag [`campus-v2.0.0`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.0.0) 或分支 `dev/campus` 跑基准——本默认分支为展示快照，非基准代码。
+> **代码锚点**：请基于 tag [`campus-v2.1.0`](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.1.0) 或分支 `dev/campus` 跑基准——本默认分支为展示快照，非基准代码。
 
 完整的域文档位于 [`src/tau2/domains/campus/README.md`](src/tau2/domains/campus/README.md)，本页为项目展示主页。
 
@@ -95,9 +96,9 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 
 - **政策工程**：36 条中文教务规程，埋 14 类规则陷阱（时间窗 / 前置条件 / 例外 / 条款互引 / 维护窗口 / 学期额度）；
 - **双控环境**：模拟*学生*本人在自己的"教务 App"上执行操作（上传材料 / 确认签署），Agent 只能**引导**——正对应 τ² 论文"引导用户比自己动手更难"的核心发现；
-- **50 道分层任务**（15 易 / 20 中 / 15 难，含 17 道零写拒绝题）+ 14 表种子数据库 + 15 个 Agent 工具与 4 个学生工具，全中文错误信息；
+- **50 道分层任务**（15 易 / 20 中 / 15 难，含 29 道零写任务——其中 20 道具明确拒绝语义）+ 14 表种子双库（11 业务表＋env 锚＋3 学生端表） + 15 个 Agent 工具与 4 个学生工具，全中文错误信息；
 - **程序化判分**：Agent/学生双侧数据库终态双哈希 + 实体串逐字命中，奖励路径无 LLM 裁判；
-- **157 项测试**：覆盖错误文案目录、状态机、deadline 守卫矩阵，以及 **50 题全量金标重放 CI**（任何异常或不变量破坏即失败；对齐上游 #499 的反制措施）。
+- **167 项测试**：覆盖错误文案目录、状态机、deadline 守卫矩阵、任务自洽 lint、上游契约钉，以及 **50 题全量金标重放 CI**（任何异常或不变量破坏即失败；对齐上游 #499 的反制措施）。
 
 ## 榜单 — 5 个大模型 × 50 题 × 4 次（每模型 200 场模拟）
 
@@ -109,7 +110,7 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 | 4 | GLM-5.3-Flash | 0.790 | 0.680 | 5.12 | 2.192 |
 | 5 | MiMo-V2.6-Pro | 0.855 | 0.660 | 5.19 | 1.816 |
 
-- **v1.1.1 补丁（2026-10-05/06）**：一致性整改（政策↔代码↔金标）——H01（因病缓考双材料）与 H06（特别通道十工作日窗，重锚）两题修复后，经 40 sims overlay 对全部 5 行重跑重锚；各行 pre-patch 原值保留。pass^4 同为 0.680 的第 3/4 名按 pass^1 排序互换。详见域 [变更记录](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-变更记录) 与 PR #596 Updates（part 1–5）。
+- **v1.1.1 补丁（2026-10-05/06）**：一致性修复（政策↔代码↔金标）——H01（因病缓考双材料）与 H06（特别通道十工作日窗，重锚）两题修复后，经 40 sims overlay 对全部 5 行重跑重锚；各行 pre-patch 原值保留。pass^4 同为 0.680 的第 3/4 名按 pass^1 排序互换。详见域 [变更记录](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-变更记录) 与 PR #596 Updates（part 1–5）。
 - user simulator 与 NL judge 每行钉在 **DeepSeek V4.1-Flash**（`deepseek-flash`）；temperature=0；seed=20261004；max_steps=60。
 - **E14 t1 为上游基础设施故障**（4 波重试，`provider temporarily unavailable`）：剔除该 trial，MiMo 修复前 0.840/0.660、现行 v1.1.1 overlay 0.860/0.680——两种口径均已披露。
 - GOAT credits 含 prompt 缓存收益（GLM-5.3 无缓存收益 1.63 cr/M；MiMo 98.9% 命中 0.12 cr/M）——13× 计费差异如实披露。
@@ -119,9 +120,9 @@ Code and domain content released under the upstream **MIT license**. τ²-bench 
 ## 复现
 
 ```bash
-git clone --branch campus-v2.0.0 https://github.com/Zitrack/tau2-bench && cd tau2-bench
+git clone --branch campus-v2.1.0 https://github.com/Zitrack/tau2-bench && cd tau2-bench
 uv sync
-pytest tests/test_domains/test_campus          # 157 项测试
+pytest tests/test_domains/test_campus          # 167 项测试
 uv run tau2 run --domain campus --agent llm_agent \
   --agent-llm <provider>/<model> \
   --user user_simulator --user-llm deepseek/deepseek-flash \
@@ -132,9 +133,10 @@ uv run tau2 run --domain campus --agent llm_agent \
 
 最新在上；完整历史见 [Releases](https://github.com/Zitrack/tau2-bench/releases) 与域 [变更记录](https://github.com/Zitrack/tau2-bench/blob/dev/campus/src/tau2/domains/campus/README.md#8-变更记录)：
 
-- **v2.0.0（2026-10-06）**——数据契约版本（44 项外审整改）：公开数据集与原始跑批的 QA 元数据全量剥离（notes/issues/P0x）；政策元注记清除 → v1.4.1；口径重算（54 条断言 / 29 零写含 20 拒绝 / 157 项 pytest）；原始跑批与判分校准以 Release assets 公开。[Tag 与版本清单](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.0.0)。
+- **v2.1.0（2026-10-07）**——任务陈述清洗与守卫扩展（政策 v1.4.2）：任务文本全字符串叶清扫作者标记（101 处），M06 陈述重写为零写拒绝语义；政策新增版本脚注（条款正文不变）；守卫：全叶标记扫描、任务自洽 lint、上游契约钉、solo 抛错；**167 项测试**。判分契约与 v2.0.0 逐字节一致；榜单数字仍为 v2.0.0 时代 as-run 结果。[Tag 与版本清单](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.1.0)。
+- **v2.0.0（2026-10-06）**——数据契约版本：公开数据集与原始跑批的 QA 元数据全量剥离（notes/issues/P0x）；政策元注记清除 → v1.4.1；口径重算（54 条断言 / 29 零写含 20 拒绝 / 157 项 pytest）；原始跑批与判分校准以 Release assets 公开。[Tag 与版本清单](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v2.0.0)。
 - **v1.1.5（2026-10-06）**——发布可发现性与运行时版本元数据：根 `README.md` 增加 fork 横幅（clone 发布 tag 即自解释）；`tau2.domains.campus.__version__` / `POLICY_VERSION` / `SCORING_PROTOCOL` 运行时可读（引擎仍钉 `tau2==1.0.1`）。[Tag 与版本清单](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.5)。
-- **v1.1.4（2026-10-06）**——第四轮评审修复：代领授权码有效期锚定**签署时刻**（第 33 条）；服务单据查询区分"缺证件"与"缺签署"（不再误导重新签署）。[Tag 与版本清单](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.4)。
+- **v1.1.4（2026-10-06）**——第 33 条闭环细节（代领授权）：代领授权码有效期锚定**签署时刻**（第 33 条）；服务单据查询区分"缺证件"与"缺签署"（不再误导重新签署）。[Tag 与版本清单](https://github.com/Zitrack/tau2-bench/releases/tag/campus-v1.1.4)。
 - **v1.1.3（2026-10-06）**——代领证件闭环（第 33 条）；工单 `target_grade_id` 仅作判窗输入（第 16 条）；公开 `tasks.json` 剥离内部 QA 元数据。
 - **v1.1.2（2026-10-06）**——未申报医院等级 → 退回补报（第 12 条）；确认回执与结算终态一致。
 - **v1.1.1（2026-10-05/06）**——加固：pre-settle、用户侧 deadline 守卫、特别通道终态迁移、候补位次单调；H01/H06 金标重锚（40 sims overlay）。
@@ -150,7 +152,7 @@ uv run tau2 run --domain campus --agent llm_agent \
 | `dev/campus` | 上游 PR #596 的确切来源分支 |
 | `src/tau2/domains/campus/` | 域代码：`data_model / user_data_model / tools / user_tools / environment` |
 | `data/tau2/domains/campus/` | `policy.md` + `db.json` + `user_db.json` + `tasks.json`（50）+ `split_tasks.json` |
-| `tests/test_domains/test_campus/` | 157 项测试 |
+| `tests/test_domains/test_campus/` | 167 项测试 |
 
 ## 许可与致谢
 
