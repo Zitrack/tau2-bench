@@ -80,7 +80,7 @@ E_MAINTENANCE = "当前处于系统维护时段（周日23:00–周一06:00，�
 E_CERT_BATCH = "证明系统月末结账中（最后工作日17:00–22:00，第31条），申请已顺延。"
 E_REVIEW_EXPIRED = "成绩公布已超5个工作日，查分不受理（第16条）；申诉通道不适用于替代查分。"
 E_LEVEL = "复核须先经学院处理（第34条），请提供原学院工单号后提交。"
-# E-WAITLIST-FROZEN：join_waitlist 引用了该错误码，但目录原本未收录文案；
+# 候补冻结错误码：join_waitlist 引用了该错误码，但目录原本未收录文案；
 # 按目录体例补写（中文、含指引）。
 E_WAITLIST_FROZEN = "本学期候补放弃已累计3次（政策第8条），候补功能已关闭，不再受理加入候补。"
 
@@ -152,7 +152,7 @@ def in_maintenance(dt: datetime) -> bool:
 
 
 def in_cert_batch(dt: datetime) -> bool:
-    """P12 第31条：每月最后工作日17:00–22:00。"""
+    """第31条：每月最后工作日17:00–22:00。"""
     lw = last_workday_of_month(dt.year, dt.month)
     if dt.date() != lw.date():
         return False
@@ -399,7 +399,7 @@ class WithdrawResult(BaseModelNoExtra):
 
 class CampusTools(ToolKitBase):
     """Agent-side tools for the campus domain. Reads/writes CampusDB (`db`) and may
-    GENERATE rows in UserDB (`user_db`) for signature/todo handoffs — the dual-control
+    GENERATE rows in UserDB (`user_db`) for signature/todo hand-offs — the dual-control
     boundary forbids flipping pending_signatures.status /
     uploads.status here."""
 
@@ -620,7 +620,7 @@ class CampusTools(ToolKitBase):
                     df.reviewed_at = self._server_time()
 
     def _award_year_ok(self, student: StudentRow, award: Any) -> List[str]:
-        """受理即时资格校验（第24/27/28条，P05/P06/P08），返回逐条拒绝原因；空列表＝通过。
+        """受理即时资格校验（第24/27/28条），返回逐条拒绝原因；空列表＝通过。
         注：gpa_rank/comprehensive_rank 依赖年级排名名单（第29条：口径以教务处当期公布计算表
         为准），数据源不在本域 schema 内，按契约不校验。"""
         reasons: List[str] = []
@@ -1156,10 +1156,10 @@ class CampusTools(ToolKitBase):
             raise ValueError(f"未找到课程目录 {off.course_id}。")
         if off.status == OfferingStatus.SUSPENDED.value:
             raise ValueError(f"《{course.name}》本学期已停开（第9条相关）：不可补选。")
-        # ② 开课后14日内（第7条 P01）
+        # ② 开课后14日内（第7条）
         if self.now > parse_time(off.adddrop_deadline):
             raise ValueError(E_WINDOW_CLOSED.format(deadline=off.adddrop_deadline, action="选课"))
-        # ③ 先修合格或在修（第6条 P04）
+        # ③ 先修合格或在修（第6条）
         for pre in course.prerequisite_course_ids:
             if not (self._grade_passed(student_id, pre) or self._prereq_in_progress(student_id, pre)):
                 pre_course = self.db.courses.get(pre)
@@ -1364,7 +1364,7 @@ class CampusTools(ToolKitBase):
                 raise ValueError(E_DEFERRAL_EXPIRED)
         else:
             raise ValueError("缓考理由只能为：冲突 / 因病（第12条）。")
-        # P13：同课程本学期缓考仅一次（"已撤回"行不占额度，v1.1-F1）
+        # 同课程本学期缓考仅一次（"已撤回"行不占额度）
         for df in self.db.deferral_requests.values():
             if df.student_id == student_id and df.offering_id == offering_id and df.status != DeferralStatus.WITHDRAWN.value:
                 raise ValueError(E_DEFERRAL_USED.format(course=course_name))
@@ -1558,7 +1558,7 @@ class CampusTools(ToolKitBase):
         self._student(student_id)
         if category not in (TicketCategory.CONSULT.value, TicketCategory.APPEAL.value, TicketCategory.SUGGESTION.value):
             raise ValueError("工单类别只能为：咨询 / 申诉 / 建议（第35条）。")
-        # 第16条查分预检：仅"申诉+成绩+逾期"组合拦截（v1.1-F2，D4/R1 定案）
+        # 第16条查分预检：仅"申诉+成绩+逾期"组合拦截
         if category == TicketCategory.APPEAL.value and module == TicketModule.GRADE.value:
             if target_grade_id:
                 # 绑定目标成绩时按该行判窗（缺省 target 时下方 any() 扫描为修前原行为）
