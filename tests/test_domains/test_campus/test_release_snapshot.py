@@ -4,15 +4,22 @@ Freezes two kinds of "must not drift back" facts as pytest assertions:
 
 1. **Runtime metadata constants** exposed by ``tau2.domains.campus``
    (``__version__`` / ``POLICY_VERSION`` / ``SCORING_PROTOCOL``).
-2. **The W1/W2 data-cleaning results** on the two public data files:
+2. **The data-cleaning results** on the two public data files:
    - ``policy.md``: zero internal meta-annotations — "坑点" pitfall tags,
      ``v1.x/F|R|M`` internal version labels, and the ``P1-10`` changelog
-     reference (W1 scrub);
+     reference (W1 scrub); plus a single-line version footer
+     (``本规程版本：vX.Y.Z（YYYY-MM-DD）`` as the exact last line, exactly
+     once, version equal to ``POLICY_VERSION``);
    - ``tasks.json``: zero ``description.notes`` keys (W1), zero ``issues``
      keys, and zero exam-point number hints (``P0[0-9]``) / "坑点" in the
-     agent-visible ``purpose`` / ``relevant_policies`` fields (W2 scrub).
+     agent-visible ``purpose`` / ``relevant_policies`` fields (W2 scrub);
+     plus an **all-string-leaves** census — no authoring marker
+     (金标 / D-S# / v1.x-bracket / 钉死 / 抽签 / 考点 / tools-spec /
+     E-DATA / leading "考 " / M#-LETTER / P#-#) anywhere in any string
+     leaf of any task (scope: the whole file, not just the
+     agent-visible fields).
 
-Version linkage: ``POLICY_VERSION == "1.4.1"`` is the **current contract
+Version linkage: ``POLICY_VERSION == "1.4.2"`` is the **current contract
 value**. If a future release bumps it, this assertion and the release
 manifest must be updated **in the same change** — they move together.
 
@@ -57,7 +64,7 @@ def test_version_is_semver():
 
 def test_policy_version_contract():
     """Current contract value — bump together with the release manifest."""
-    assert campus.POLICY_VERSION == "1.4.1"
+    assert campus.POLICY_VERSION == "1.4.2"
 
 
 def test_scoring_protocol_contract():
@@ -108,3 +115,65 @@ def test_agent_visible_fields_free_of_exam_point_hints(tasks):
             if re.search(r"P0[0-9]", value) or "坑点" in value:
                 offenders.append(f"{task['id']}.{field}")
     assert not offenders, f"exam-point hints reintroduced: {offenders}"
+
+
+# --- 4. all-string-leaves marker census + policy version footer ------------
+
+# Authoring/internal markers scrubbed from the public data. Scope: EVERY
+# string leaf of tasks.json (not only the agent-visible fields). "考 " is
+# leaf-anchored (leading only) so words like "缺考" never match.
+INTERNAL_MARKER_PATTERNS = {
+    "金标": r"金标",
+    "D-S": r"D-S\d",
+    "v1.x-bracket": r"v1\.\d[/（( ]",
+    "钉死": r"钉死",
+    "抽签": r"抽签",
+    "考点": r"考点",
+    "tools-spec": r"tools-spec",
+    "E-DATA": r"E-DATA",
+    "leading-考": r"^考 ",
+    "M#-LETTER": r"M\d+-[A-Z]",
+    "P#-#": r"P\d+-\d",
+}
+
+POLICY_FOOTER_RE = re.compile(r"本规程版本：v(\d+\.\d+\.\d+)（(\d{4}-\d{2}-\d{2})）")
+
+
+def _walk_strings(node, path=""):
+    """Yield (path, text) for every string leaf in a JSON-like structure."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            yield from _walk_strings(value, f"{path}.{key}")
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            yield from _walk_strings(value, f"{path}[{i}]")
+    elif isinstance(node, str):
+        yield path, node
+
+
+def test_tasks_all_string_leaves_free_of_internal_markers(tasks):
+    """No authoring marker in ANY string leaf of tasks.json — including
+    persona, actions[].info, instructions, etc."""
+    offenders = []
+    for task in tasks:
+        for path, text in _walk_strings(task):
+            for name, pattern in INTERNAL_MARKER_PATTERNS.items():
+                if re.search(pattern, text):
+                    offenders.append(f"{task['id']}{path}:{name}")
+    assert not offenders, f"internal markers reintroduced: {offenders}"
+
+
+def test_policy_has_version_footer(policy_text):
+    """policy.md ends with exactly one single-line version footer whose
+    version equals POLICY_VERSION (footer and constant move together)."""
+    lines = [line for line in policy_text.splitlines() if line.strip()]
+    assert lines, "policy.md is empty"
+    last = lines[-1]
+    match = POLICY_FOOTER_RE.fullmatch(last)
+    assert match, f"policy.md last line must be the version footer, got: {last!r}"
+    footers = [line for line in lines if line.startswith("本规程版本：")]
+    assert len(footers) == 1, f"expected exactly one version footer: {footers}"
+    assert match.group(1) == campus.POLICY_VERSION, (
+        f"policy footer v{match.group(1)} != POLICY_VERSION "
+        f"{campus.POLICY_VERSION} — bump both in the same change"
+    )

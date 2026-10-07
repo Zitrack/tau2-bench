@@ -100,6 +100,10 @@ def get_environment(
     user_db: Optional[UserDB] = None,
     solo_mode: bool = False,
 ) -> CampusEnvironment:
+    # 上游同款约定（airline/retail/banking_knowledge）：不支持 solo 即入口抛错，
+    # 不走 set_solo_mode 静默声明路径（campus 50/50 题均无 solo 题面）。
+    if solo_mode:
+        raise ValueError("Solo mode not supported for campus")
     if db is None:
         db = CampusDB.load(str(CAMPUS_DB_PATH))
     if user_db is None:
@@ -113,8 +117,6 @@ def get_environment(
         tools=tools,
         user_tools=user_tools,
     )
-    if solo_mode:
-        env.set_solo_mode(True)
     return env
 
 
