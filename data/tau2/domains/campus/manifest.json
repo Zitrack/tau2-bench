@@ -1,9 +1,9 @@
 {
-  "benchmark_version": "2.2.0",
+  "benchmark_version": "2.3.0",
   "policy_version": "1.4.2",
   "evaluator_protocol": "tau2-v1.0.1-compatible",
-  "code_commit": "filled at release",
-  "dataset_revision": "filled at release",
+  "code_tag": "campus-v2.3.0",
+  "release_binding": "concrete commit sha and dataset revision are recorded in the Release asset manifest of the matching tag",
   "task_count": 50,
   "hash_scope": "sha256 of each file's LF-normalized bytes (line-ending independent)",
   "files": {

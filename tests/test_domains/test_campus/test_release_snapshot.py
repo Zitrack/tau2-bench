@@ -371,14 +371,48 @@ def manifest() -> dict:
 def test_manifest_version_constants_twin(manifest):
     """__version__ / POLICY_VERSION / SCORING_PROTOCOL ⇔ manifest: moving
     either side without the other fails here (same-change discipline).
-    ``code_commit`` / ``dataset_revision`` are placeholders until release
-    and are filled then — only their presence is pinned."""
+    ``code_tag`` is prefilled at commit time and twin-asserted against
+    ``__version__`` (``campus-v`` + version, loose campus-vX.Y.Z shape); the
+    concrete commit sha and dataset revision live in the Release asset manifest
+    of the matching tag (``release_binding``). The old truthy-only
+    ``code_commit`` / ``dataset_revision`` placeholders are removed — a
+    placeholder can no longer satisfy the guard (P1-7, R25-b)."""
     assert manifest["benchmark_version"] == campus.__version__
     assert manifest["policy_version"] == campus.POLICY_VERSION
     assert manifest["evaluator_protocol"] == campus.SCORING_PROTOCOL
     assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["benchmark_version"])
-    assert manifest["code_commit"], "code_commit placeholder must be present"
-    assert manifest["dataset_revision"], "dataset_revision placeholder must be present"
+    import re as _re
+    assert _re.fullmatch(r"campus-v\d+\.\d+\.\d+", manifest["code_tag"]), (
+        "code_tag must look like campus-vX.Y.Z"
+    )
+    assert manifest["code_tag"] == "campus-v" + campus.__version__, (
+        f"code_tag {manifest['code_tag']!r} must twin campus-v"
+        f"{campus.__version__!r}"
+    )
+    assert "code_commit" not in manifest and "dataset_revision" not in manifest, (
+        "release placeholders code_commit/dataset_revision must be removed"
+    )
+    assert "release_binding" in manifest, "release_binding note must be present"
+
+
+def test_no_release_placeholder_text_in_campus_tree():
+    """P1-7 regression: the 'filled at release' placeholder must be absent from
+    the campus source package and the published data directory, so the twin
+    guard can never again be satisfied by a truthy placeholder. Scan scope is
+    the two canonical homes of code/data version facts (src package + data)."""
+    needle = "filled at release"
+    roots = [Path(campus.__file__).parent, CAMPUS_DATA_DIR]
+    hits = []
+    for root in roots:
+        for pattern in ("*.py", "*.json", "*.md"):
+            for path in sorted(root.rglob(pattern)):
+                try:
+                    text = path.read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError):
+                    continue
+                if needle in text:
+                    hits.append(str(path))
+    assert not hits, f"'filled at release' placeholder reintroduced: {hits}"
 
 
 def test_manifest_data_file_hashes(manifest):
