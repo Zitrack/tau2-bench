@@ -168,7 +168,7 @@ Leaderboard rows were produced with a dual-channel harness (agent on an OpenAI-c
 ```bibtex
 @misc{tau2-zh-campus,
   title        = {Tau2-ZH: A Native Chinese Campus Domain for $\tau^2$-bench},
-  author       = {{Tau2-ZH Project}},
+  author       = {{Tau2-ZH Project (Zitrack)}},
   year         = {2026},
   howpublished = {\url{https://github.com/Zitrack/tau2-bench} (dev/campus branch)},
   note         = {50 tasks; scoring pinned to tau2-bench v1.0.1}
@@ -388,7 +388,7 @@ uv run tau2 evaluate-trajs <results.json> --fresh-tasks
 ```bibtex
 @misc{tau2-zh-campus,
   title        = {Tau2-ZH: A Native Chinese Campus Domain for $\tau^2$-bench},
-  author       = {{Tau2-ZH Project}},
+  author       = {{Tau2-ZH Project (Zitrack)}},
   year         = {2026},
   howpublished = {\url{https://github.com/Zitrack/tau2-bench} (dev/campus branch)},
   note         = {50 tasks; scoring pinned to tau2-bench v1.0.1}
