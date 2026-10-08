@@ -2,7 +2,7 @@
 
 Wiring notes:
 - Dual DB: CampusTools owns CampusDB (`db`) and references UserDB (`user_db`) to GENERATE
-  signature/todo handoff rows; CampusUserTools owns UserDB (`db`) and references CampusDB
+  signature/todo hand-off rows; CampusUserTools owns UserDB (`db`) and references CampusDB
   (`main_db`) to advance business state. One DB pair instance is shared across both
   toolkits; `get_db_hash`/`get_user_db_hash` therefore hash agent/user sides separately
   (dual-hash equality).

@@ -60,7 +60,7 @@ Both files are JSON objects mapping primary key → row object.
 
 ## 6. `manifest.json` — code↔data pairing
 
-Machine-readable binding published with the data: `benchmark_version`, `policy_version`, `evaluator_protocol`, `code_commit` and `dataset_revision` (both filled at release), `task_count`, and `files` — the per-file SHA-256 of the five data payloads (`tasks.json`, `split_tasks.json`, `policy.md`, `db.json`, `user_db.json`), hashed over each file's LF-normalized bytes so the value is independent of checkout line endings. Twin assertions in the test suite keep `manifest.json` ⇔ runtime version constants ⇔ file bytes in lockstep: tampering with any of them fails the suite.
+Machine-readable binding published with the data: `benchmark_version`, `policy_version`, `evaluator_protocol`, `code_tag` (prefilled as `campus-vX.Y.Z`, twin-validated against `__version__`), `release_binding`, `task_count`, and `files` — the per-file SHA-256 of the five data payloads (`tasks.json`, `split_tasks.json`, `policy.md`, `db.json`, `user_db.json`), hashed over each file's LF-normalized bytes so the value is independent of checkout line endings. The concrete commit SHA and dataset revision are recorded in the Release asset manifest of the matching tag (see the `release_binding` key). Twin assertions in the test suite keep `manifest.json` ⇔ runtime version constants ⇔ file bytes in lockstep — including the `code_tag`⇔`__version__` pair: tampering with any of them fails the suite.
 
 ---
 
@@ -126,4 +126,4 @@ Machine-readable binding published with the data: `benchmark_version`, `policy_v
 
 ## 6. `manifest.json` — 代码↔数据配对
 
-随数据发布的机器可读绑定：`benchmark_version`、`policy_version`、`evaluator_protocol`、`code_commit` 与 `dataset_revision`（二者发布时填充）、`task_count`，以及 `files`——五个数据载荷（`tasks.json`、`split_tasks.json`、`policy.md`、`db.json`、`user_db.json`）的逐文件 SHA-256，按各文件 LF 归一化后的字节计算，使取值与检出换行符无关。测试套件中的孪生断言让 `manifest.json` ⇔ 运行时版本常量 ⇔ 文件字节保持同步：任何一处被篡改都会让测试变红。
+随数据发布的机器可读绑定：`benchmark_version`、`policy_version`、`evaluator_protocol`、`code_tag`（提交时预填为 `campus-vX.Y.Z`，可与 `__version__` 孪生校验）、`release_binding`、`task_count`，以及 `files`——五个数据载荷（`tasks.json`、`split_tasks.json`、`policy.md`、`db.json`、`user_db.json`）的逐文件 SHA-256，按各文件 LF 归一化后的字节计算，使取值与检出换行符无关。具体 commit SHA 与数据修订记录于对应版本的 Release 资产清单（见 `release_binding` 键）。测试套件中的孪生断言让 `manifest.json` ⇔ 运行时版本常量 ⇔ 文件字节保持同步（含 `code_tag`⇔`__version__` 配对）：任何一处被篡改都会让测试变红。

@@ -434,8 +434,10 @@ class CampusUserTools(ToolKitBase):
 
     @is_tool(ToolType.WRITE)
     def reject_suggestion(self, sig_id: str, reason: str = "") -> RejectResult:
-        """拒签/放弃（候补确认单拒签＝放弃候补，abandon_count+1；特别通道拒签＝撤回申请；
-        其余单据拒签＝撤回该申请）。引导能力测试抓手：Agent 建议不当，学生可当面拒签。
+        """拒签/放弃：各类单据的拒签即撤销对应申请或放弃候补。
+
+        候补确认单拒签＝放弃候补（abandon_count+1）；特别通道拒签＝撤回申请；
+        其余单据拒签＝撤回该申请。Agent 建议不当的，学生可当面拒签。
 
         Args:
             sig_id: 签署单号 SIG-xxx。
