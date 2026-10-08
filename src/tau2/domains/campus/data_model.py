@@ -61,7 +61,7 @@ class EnrollmentStatus(str, Enum):
     DROPPED = "已退课"
     VOIDED = "失效"           # 学籍变动失效（第10条）或候补放弃（第8条）
     PREREQ_AUTO_DROP = "先修自动退选"  # 第6条：先修期末未通过
-    SPECIAL_CHANNEL_REVIEW = "特别通道审核中"  # 第9条 P07（v1.1 IC 定名）
+    SPECIAL_CHANNEL_REVIEW = "特别通道审核中"  # 第9条
 
 
 class EnrollmentSource(str, Enum):
@@ -84,8 +84,8 @@ class GradeLevel(str, Enum):
     C = "C"
     D = "D"
     F = "F"
-    DEFERRED = "缓"           # 第13条 P09 占位：score 恒 null，不计 GPA
-    ABSENT = "缺"             # 第18条 P10：score=0，计 0 绩点与不及格学分
+    DEFERRED = "缓"           # 第13条占位：score 恒 null，不计 GPA
+    ABSENT = "缺"             # 第18条：score=0，计 0 绩点与不及格学分
     UNPUBLISHED = "未公布"
 
 
@@ -131,7 +131,7 @@ class DeferralStatus(str, Enum):
     APPROVED = "通过"
     REJECTED = "驳回"
     EXPIRED = "逾期"
-    WITHDRAWN = "已撤回"      # v1.1-F1：签署确认前主动撤回，不占 P13 额度
+    WITHDRAWN = "已撤回"      # 签署确认前主动撤回，不占额度
 
 
 class ReviewStage(str, Enum):
@@ -155,7 +155,7 @@ class AwardScope(str, Enum):
 
 class AwardChannel(str, Enum):
     REGULAR = "常规"
-    FAST_TRACK = "突发快速通道"   # 第28条 P08，每学年限一次
+    FAST_TRACK = "突发快速通道"   # 第28条，每学年限一次
 
 
 class AwardAppStatus(str, Enum):
@@ -196,13 +196,13 @@ class CertStatus(str, Enum):
     READY = "可领取"
     COLLECTED = "已领取"
     REJECTED = "驳回"
-    BATCH_DEFERRED = "顺延结账"   # 第31条 P12
-    WITHDRAWN = "已撤回"          # v1.1-F4：第30条出具前撤回，留行不出具
+    BATCH_DEFERRED = "顺延结账"   # 第31条
+    WITHDRAWN = "已撤回"          # 第30条出具前撤回，留行不出具
 
 
 class TicketCategory(str, Enum):
-    CONSULT = "咨询"          # 2 工作日答复；v1.1-F2：逾期查分可建咨询工单
-    APPEAL = "申诉"           # 5 工作日；查分逾期时禁建（E-REVIEW-EXPIRED）
+    CONSULT = "咨询"          # 2 工作日答复；逾期查分可建咨询工单
+    APPEAL = "申诉"           # 5 工作日；查分逾期时禁建
     SUGGESTION = "建议"       # 10 工作日
 
 
@@ -309,8 +309,8 @@ class Eligibility(BaseModelNoExtra):
     no_discipline: bool = Field(False, description="无处分记录")
     gpa_rank_top_pct: Optional[float] = Field(None, description="GPA 年级排名前百分数（如 10.0）")
     comprehensive_rank_top_pct: Optional[float] = Field(None, description="综测排名前百分数")
-    aid_pool_required: bool = Field(False, description="要求困难库已入库（第27条 P06）")
-    single_use_year: bool = Field(False, description="每学年限一次（第28条 P08）")
+    aid_pool_required: bool = Field(False, description="要求困难库已入库（第27条）")
+    single_use_year: bool = Field(False, description="每学年限一次（第28条）")
 
 
 class AppWindow(BaseModelNoExtra):
@@ -321,7 +321,7 @@ class AppWindow(BaseModelNoExtra):
 
 class Maintenance(BaseModelNoExtra):
     weekly: str = Field("周日23:00-周一06:00", description="第3条：全部写操作不受理")
-    cert_batch: str = Field("每月最后工作日17:00-22:00", description="第31条 P12：证明暂停")
+    cert_batch: str = Field("每月最后工作日17:00-22:00", description="第31条：证明暂停")
 
 
 class EnvState(BaseModelNoExtra):
@@ -364,8 +364,8 @@ class StudentRow(BaseModelNoExtra):
     aid_pool_valid_through: Optional[str] = Field(None, description="有效期至学年，如 2025-2026")
     warning_records: List[WarningRecord] = []
     disciplinary_records: List[DisciplinaryRecord] = []
-    major_change_used: bool = Field(False, description="第20条 P14")
-    temp_aid_used_this_year: bool = Field(False, description="第28条 P08")
+    major_change_used: bool = Field(False, description="第20条")
+    temp_aid_used_this_year: bool = Field(False, description="第28条")
     waitlist_abandon_count: int = Field(0, description="第8条：≥3 冻结候补")
     credit_limit_override: bool = Field(False, description="第5条：超32学分特批")
 
@@ -377,7 +377,7 @@ class CourseRow(BaseModelNoExtra):
     course_type: CourseType
     credits: float
     hours: Optional[int] = None
-    prerequisite_course_ids: List[str] = Field(default_factory=list, description="第6条 P04")
+    prerequisite_course_ids: List[str] = Field(default_factory=list, description="第6条")
     assessment: Assessment
     description: str = ""
 
@@ -394,7 +394,7 @@ class OfferingRow(BaseModelNoExtra):
     waitlist_count: int = 0
     status: OfferingStatus
     start_date: str = Field(description="开课日（第7条窗口起算）")
-    adddrop_deadline: str = Field(description="＝start_date+13 天 23:59（P01 判定列）")
+    adddrop_deadline: str = Field(description="＝start_date+13 天 23:59（补退选截止判定列）")
     term_end_date: str
 
 
