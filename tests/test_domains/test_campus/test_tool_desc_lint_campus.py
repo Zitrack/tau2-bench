@@ -22,6 +22,10 @@ import pytest
 from tau2.domains.campus.environment import get_environment
 
 # (pattern, why it is forbidden) — order mirrors the wording-rule list.
+# This is the TOOL-DESCRIPTION surface only. The task-text surface has its own
+# set (TASK_TEXT_FORBIDDEN_PATTERNS in test_task_text_lint_campus.py); the two
+# sets are distinct on purpose and cross-reference each other by comment —
+# find_forbidden below is the single shared detector for both surfaces.
 FORBIDDEN_PATTERNS = (
     (r"v\d+\.\d+-[A-Z]", "internal version tag (v1.1-Fx)"),
     (r"E-[A-Z]{2,}", "hyphenated error code (E-LEVEL)"),
@@ -35,11 +39,18 @@ FORBIDDEN_PATTERNS = (
 )
 
 
-def find_forbidden(text: str) -> list[tuple[str, str]]:
-    """Return [(pattern, matched_text)] for every forbidden hit in ``text``."""
+def find_forbidden(
+    text: str, patterns: tuple[tuple[str, str], ...] = FORBIDDEN_PATTERNS
+) -> list[tuple[str, str]]:
+    """Return [(pattern, matched_text)] for every forbidden hit in ``text``.
+
+    ``patterns`` defaults to the tool-description set; the task-text lint
+    passes its own set (single mechanism, documented sets — see the comment
+    on FORBIDDEN_PATTERNS above).
+    """
     return [
         (pattern, m.group(0))
-        for pattern, _label in FORBIDDEN_PATTERNS
+        for pattern, _label in patterns
         for m in re.finditer(pattern, text)
     ]
 
